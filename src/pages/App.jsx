@@ -78,8 +78,8 @@ function App() {
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-primary-100 blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-100 blur-3xl opacity-50"></div>
         
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center max-w-3xl mx-auto animate-fade-in">
+        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-4xl mx-auto animate-fade-in">
             <Badge variant="primary" dot className="mb-6">
               Digital Transformation Phase 1
             </Badge>
@@ -111,7 +111,7 @@ function App() {
           </div>
 
           {/* Dashboard Preview Mockup */}
-          <div className="mt-20 relative mx-auto max-w-5xl animate-float">
+          <div className="mt-20 relative mx-auto max-w-6xl animate-float">
             <div className="bg-slate-900 rounded-2xl p-2 shadow-2xl shadow-slate-400/50">
               <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                 {/* Mockup Header */}
@@ -141,7 +141,7 @@ function App() {
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8">
           <SectionHeader 
             title="บริการหลักของระบบ"
             subtitle="รองรับกระบวนการขออนุมัติเอกสารสำคัญทั้ง 4 ประเภท ครอบคลุมทุกความต้องการของนักวิจัยและเจ้าหน้าที่"
@@ -156,7 +156,7 @@ function App() {
 
       {/* Process Section */}
       <section id="process" className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="w-full max-w-[1100px] mx-auto px-6 lg:px-8">
           <SectionHeader 
             title="ขั้นตอนการทำงาน"
             subtitle="ลดความซับซ้อน เหลือเพียง 3 ขั้นตอนหลัก"
