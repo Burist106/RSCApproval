@@ -406,7 +406,7 @@ function BundlePreviewStep({ documents, onSubmit, onBack, pathConfig, colors }) 
         </div>
 
         {/* Document Preview */}
-        <Card className="lg:col-span-3 bg-slate-50 border-none">
+        <Card className="lg:col-span-3 bg-slate-100 border-none overflow-auto max-h-[calc(100vh-200px)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
               ตัวอย่างเอกสาร
@@ -423,11 +423,15 @@ function BundlePreviewStep({ documents, onSubmit, onBack, pathConfig, colors }) 
             </div>
           </div>
           
-          {/* A4 Preview */}
-          <div className="bg-white rounded-xl shadow-sm p-8 min-h-[600px] border border-slate-200">
-            {documents[activeTab] && (
-              <DocumentPreview document={documents[activeTab]} />
-            )}
+          {/* Document Preview */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div className="max-h-[600px] overflow-y-auto">
+              <div className="p-6">
+                {documents[activeTab] && (
+                  <DocumentPreview document={documents[activeTab]} />
+                )}
+              </div>
+            </div>
           </div>
         </Card>
       </div>

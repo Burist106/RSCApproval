@@ -541,7 +541,7 @@ export default function CarRequestForm({
               </div>
               
               {/* Document Preview */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
                 {/* Document Header */}
                 <div className="bg-purple-500 text-white px-4 py-2 text-xs flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -551,169 +551,171 @@ export default function CarRequestForm({
                 </div>
                 
                 {/* Document Content */}
-                <div className="p-4 text-[10px] leading-relaxed space-y-3 max-h-[700px] overflow-y-auto">
-                  {/* Header */}
-                  <div className="text-center border-b border-slate-200 pb-3">
-                    <p className="font-bold text-sm">แบบขออนุมัติใช้รถยนต์ส่วนตัวเดินทางไปราชการ</p>
-                    <p className="text-slate-500 text-[9px]">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
-                  </div>
+                <div className="max-h-[600px] overflow-y-auto">
+                  <div className="p-4 text-[10px] leading-relaxed space-y-3 font-sarabun">
+                    {/* Header */}
+                    <div className="text-center border-b border-slate-200 pb-3">
+                      <p className="font-bold text-sm">แบบขออนุมัติใช้รถยนต์ส่วนตัวเดินทางไปราชการ</p>
+                      <p className="text-slate-500 text-[9px]">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
+                    </div>
 
-                  {/* Date */}
-                  <div className="text-right text-[9px]">
-                    <p>วันที่ {formatThaiDateFull(new Date().toISOString().split('T')[0])}</p>
-                  </div>
+                    {/* Date */}
+                    <div className="text-right text-[9px]">
+                      <p>วันที่ {formatThaiDateFull(new Date().toISOString().split('T')[0])}</p>
+                    </div>
 
-                  {/* To */}
-                  <div>
-                    <p><strong>เรียน</strong> ผู้อำนวยการศูนย์ RSC</p>
-                  </div>
-
-                  {/* Requester Info */}
-                  <div className="bg-purple-50 p-2 rounded border border-purple-200 space-y-1">
-                    <p>
-                      <strong>ข้าพเจ้า</strong> {formData.requesterName || '....................................'}
-                      <strong className="ml-2">ตำแหน่ง</strong> {formData.position || '......................'}
-                    </p>
-                    <p>
-                      <strong>สังกัด</strong> {formData.department || '....................................'}
-                    </p>
-                  </div>
-
-                  {/* Purpose */}
-                  <div className="space-y-1">
-                    <p>
-                      <strong>มีความประสงค์ขออนุมัติใช้รถยนต์ส่วนตัว</strong> เพื่อเดินทางไปราชการ
-                    </p>
-                    <p>
-                      <strong>เรื่อง</strong> {formData.tripPurpose || '....................................'}
-                    </p>
-                    <p>
-                      <strong>ณ</strong> {formData.destination || '......................'} 
-                      {formData.province && <span> จังหวัด{formData.province}</span>}
-                    </p>
-                  </div>
-
-                  {/* Schedule */}
-                  <div className="border border-slate-200 rounded overflow-hidden">
-                    <table className="w-full text-[9px]">
-                      <tbody>
-                        <tr className="border-b border-slate-200">
-                          <td className="px-2 py-1 bg-slate-50 font-medium w-24">ออกเดินทาง</td>
-                          <td className="px-2 py-1">
-                            วันที่ {formatThaiDate(formData.departureDate)} 
-                            {formData.departureTime && ` เวลา ${formData.departureTime} น.`}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-2 py-1 bg-slate-50 font-medium">กลับถึง</td>
-                          <td className="px-2 py-1">
-                            วันที่ {formatThaiDate(formData.returnDate)} 
-                            {formData.returnTime && ` เวลา ${formData.returnTime} น.`}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Passengers */}
-                  {(formData.passengerCount || formData.passengers) && (
+                    {/* To */}
                     <div>
-                      <p><strong>ผู้ร่วมเดินทาง</strong> {formData.passengerCount || '0'} คน</p>
-                      {formData.passengers && <p className="text-slate-600 pl-2">{formData.passengers}</p>}
+                      <p><strong>เรียน</strong> ผู้อำนวยการศูนย์ RSC</p>
                     </div>
-                  )}
 
-                  {/* Car Info */}
-                  <div className="bg-slate-50 p-2 rounded border border-slate-200">
-                    <p className="font-medium mb-1">ข้อมูลรถยนต์</p>
-                    <div className="grid grid-cols-2 gap-1 text-[9px]">
-                      <p><strong>ประเภท:</strong> {carTypes.find(t => t.value === formData.carType)?.label || '-'}</p>
-                      <p><strong>ยี่ห้อ:</strong> {formData.carBrand || '-'}</p>
-                      <p><strong>รุ่น:</strong> {formData.carModel || '-'}</p>
-                      <p><strong>ทะเบียน:</strong> {formData.licensePlate || '-'}</p>
-                      <p><strong>ขนาดเครื่องยนต์:</strong> {formData.engineSize ? `${formData.engineSize} ซีซี` : '-'}</p>
+                    {/* Requester Info */}
+                    <div className="bg-purple-50 p-2 rounded border border-purple-200 space-y-1">
+                      <p>
+                        <strong>ข้าพเจ้า</strong> {formData.requesterName || '....................................'}
+                        <strong className="ml-2">ตำแหน่ง</strong> {formData.position || '......................'}
+                      </p>
+                      <p>
+                        <strong>สังกัด</strong> {formData.department || '....................................'}
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Distance & Compensation */}
-                  <div className="bg-purple-50 p-2 rounded border border-purple-200">
-                    <div className="flex justify-between items-center">
+                    {/* Purpose */}
+                    <div className="space-y-1">
+                      <p>
+                        <strong>มีความประสงค์ขออนุมัติใช้รถยนต์ส่วนตัว</strong> เพื่อเดินทางไปราชการ
+                      </p>
+                      <p>
+                        <strong>เรื่อง</strong> {formData.tripPurpose || '....................................'}
+                      </p>
+                      <p>
+                        <strong>ณ</strong> {formData.destination || '......................'} 
+                        {formData.province && <span> จังหวัด{formData.province}</span>}
+                      </p>
+                    </div>
+
+                    {/* Schedule */}
+                    <div className="border border-slate-200 rounded overflow-hidden">
+                      <table className="w-full text-[9px]">
+                        <tbody>
+                          <tr className="border-b border-slate-200">
+                            <td className="px-2 py-1 bg-slate-50 font-medium w-24">ออกเดินทาง</td>
+                            <td className="px-2 py-1">
+                              วันที่ {formatThaiDate(formData.departureDate)} 
+                              {formData.departureTime && ` เวลา ${formData.departureTime} น.`}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 py-1 bg-slate-50 font-medium">กลับถึง</td>
+                            <td className="px-2 py-1">
+                              วันที่ {formatThaiDate(formData.returnDate)} 
+                              {formData.returnTime && ` เวลา ${formData.returnTime} น.`}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Passengers */}
+                    {(formData.passengerCount || formData.passengers) && (
                       <div>
-                        <p className="font-medium">ระยะทางไป-กลับ</p>
-                        <p className="text-lg font-bold text-purple-700">{formData.distanceKm || 0} กม.</p>
+                        <p><strong>ผู้ร่วมเดินทาง</strong> {formData.passengerCount || '0'} คน</p>
+                        {formData.passengers && <p className="text-slate-600 pl-2">{formData.passengers}</p>}
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">ค่าชดเชยน้ำมัน</p>
-                        <p className="text-lg font-bold text-purple-700">{fuelCompensation.toLocaleString()} บาท</p>
+                    )}
+
+                    {/* Car Info */}
+                    <div className="bg-slate-50 p-2 rounded border border-slate-200">
+                      <p className="font-medium mb-1">ข้อมูลรถยนต์</p>
+                      <div className="grid grid-cols-2 gap-1 text-[9px]">
+                        <p><strong>ประเภท:</strong> {carTypes.find(t => t.value === formData.carType)?.label || '-'}</p>
+                        <p><strong>ยี่ห้อ:</strong> {formData.carBrand || '-'}</p>
+                        <p><strong>รุ่น:</strong> {formData.carModel || '-'}</p>
+                        <p><strong>ทะเบียน:</strong> {formData.licensePlate || '-'}</p>
+                        <p><strong>ขนาดเครื่องยนต์:</strong> {formData.engineSize ? `${formData.engineSize} ซีซี` : '-'}</p>
                       </div>
                     </div>
-                    <p className="text-[8px] text-purple-600 mt-1">
-                      (อัตรา {FUEL_RATE} บาท/กม. × {formData.distanceKm || 0} กม.)
-                    </p>
-                  </div>
 
-                  {/* Reason */}
-                  <div>
-                    <p className="font-medium">เหตุผลความจำเป็น:</p>
-                    <p className="text-slate-600 pl-2">
-                      ☑ {reasonOptions.find(r => r.value === formData.reason)?.label || '-'}
-                      {formData.reason === 'other' && formData.reasonOther && (
-                        <span>: {formData.reasonOther}</span>
-                      )}
-                    </p>
-                  </div>
+                    {/* Distance & Compensation */}
+                    <div className="bg-purple-50 p-2 rounded border border-purple-200">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">ระยะทางไป-กลับ</p>
+                          <p className="text-lg font-bold text-purple-700">{formData.distanceKm || 0} กม.</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">ค่าชดเชยน้ำมัน</p>
+                          <p className="text-lg font-bold text-purple-700">{fuelCompensation.toLocaleString()} บาท</p>
+                        </div>
+                      </div>
+                      <p className="text-[8px] text-purple-600 mt-1">
+                        (อัตรา {FUEL_RATE} บาท/กม. × {formData.distanceKm || 0} กม.)
+                      </p>
+                    </div>
 
-                  {/* Project */}
-                  {formData.projectName && (
+                    {/* Reason */}
                     <div>
-                      <p><strong>โครงการ:</strong> {formData.projectName}</p>
-                      {formData.budgetSource && <p><strong>แหล่งงบประมาณ:</strong> {formData.budgetSource}</p>}
+                      <p className="font-medium">เหตุผลความจำเป็น:</p>
+                      <p className="text-slate-600 pl-2">
+                        ☑ {reasonOptions.find(r => r.value === formData.reason)?.label || '-'}
+                        {formData.reason === 'other' && formData.reasonOther && (
+                          <span>: {formData.reasonOther}</span>
+                        )}
+                      </p>
                     </div>
-                  )}
 
-                  {/* Declaration */}
-                  <div className="text-[9px] text-slate-600 border-t border-slate-200 pt-2">
-                    <p className="indent-4">
-                      ข้าพเจ้าขอรับรองว่าจะใช้รถยนต์ส่วนตัวในการเดินทางไปราชการตามที่ระบุข้างต้น
-                      และจะปฏิบัติตามระเบียบของทางราชการโดยเคร่งครัด
-                    </p>
-                  </div>
-
-                  {/* Signatures */}
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="text-center">
-                      <p className="mb-6">ลงชื่อ.................................</p>
-                      <p>({formData.requesterName || '............................'})</p>
-                      <p className="text-slate-500">ผู้ขออนุมัติ</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="mb-6">ลงชื่อ.................................</p>
-                      <p>(............................)</p>
-                      <p className="text-slate-500">ผู้บังคับบัญชา</p>
-                    </div>
-                  </div>
-
-                  {/* Approval Section */}
-                  <div className="border-t-2 border-slate-400 pt-2 mt-2">
-                    <p className="font-bold text-center mb-2">ความเห็นผู้อนุมัติ</p>
-                    <div className="space-y-2">
-                      <div className="flex gap-4 text-[9px]">
-                        <label className="flex items-center gap-1">
-                          <span className="w-3 h-3 border border-slate-400 rounded-sm inline-block"></span>
-                          อนุมัติ
-                        </label>
-                        <label className="flex items-center gap-1">
-                          <span className="w-3 h-3 border border-slate-400 rounded-sm inline-block"></span>
-                          ไม่อนุมัติ
-                        </label>
+                    {/* Project */}
+                    {formData.projectName && (
+                      <div>
+                        <p><strong>โครงการ:</strong> {formData.projectName}</p>
+                        {formData.budgetSource && <p><strong>แหล่งงบประมาณ:</strong> {formData.budgetSource}</p>}
                       </div>
-                      <div className="h-12 border border-slate-200 rounded bg-slate-50"></div>
+                    )}
+
+                    {/* Declaration */}
+                    <div className="text-[9px] text-slate-600 border-t border-slate-200 pt-2">
+                      <p className="indent-4">
+                        ข้าพเจ้าขอรับรองว่าจะใช้รถยนต์ส่วนตัวในการเดินทางไปราชการตามที่ระบุข้างต้น
+                        และจะปฏิบัติตามระเบียบของทางราชการโดยเคร่งครัด
+                      </p>
                     </div>
-                    <div className="text-center mt-4">
-                      <p className="mb-6">ลงชื่อ.................................</p>
-                      <p>(............................)</p>
-                      <p className="text-slate-500">ผู้อำนวยการศูนย์ RSC</p>
-                      <p className="text-[9px] text-slate-400">วันที่...../...../.......</p>
+
+                    {/* Signatures */}
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="text-center">
+                        <p className="mb-6">ลงชื่อ.................................</p>
+                        <p>({formData.requesterName || '............................'})</p>
+                        <p className="text-slate-500">ผู้ขออนุมัติ</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="mb-6">ลงชื่อ.................................</p>
+                        <p>(............................)</p>
+                        <p className="text-slate-500">ผู้บังคับบัญชา</p>
+                      </div>
+                    </div>
+
+                    {/* Approval Section */}
+                    <div className="border-t-2 border-slate-400 pt-2 mt-2">
+                      <p className="font-bold text-center mb-2">ความเห็นผู้อนุมัติ</p>
+                      <div className="space-y-2">
+                        <div className="flex gap-4 text-[9px]">
+                          <label className="flex items-center gap-1">
+                            <span className="w-3 h-3 border border-slate-400 rounded-sm inline-block"></span>
+                            อนุมัติ
+                          </label>
+                          <label className="flex items-center gap-1">
+                            <span className="w-3 h-3 border border-slate-400 rounded-sm inline-block"></span>
+                            ไม่อนุมัติ
+                          </label>
+                        </div>
+                        <div className="h-12 border border-slate-200 rounded bg-slate-50"></div>
+                      </div>
+                      <div className="text-center mt-4">
+                        <p className="mb-6">ลงชื่อ.................................</p>
+                        <p>(............................)</p>
+                        <p className="text-slate-500">ผู้อำนวยการศูนย์ RSC</p>
+                        <p className="text-[9px] text-slate-400">วันที่...../...../.......</p>
+                      </div>
                     </div>
                   </div>
                 </div>

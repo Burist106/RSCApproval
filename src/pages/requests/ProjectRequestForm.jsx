@@ -123,6 +123,52 @@ export default function ProjectRequestForm({
     return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`
   }
 
+  // Convert number to Thai text
+  const numberToThaiText = (num) => {
+    if (num === 0) return 'ศูนย์บาทถ้วน'
+    
+    const thaiNumbers = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
+    const thaiUnits = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน']
+    
+    const convertLessThanMillion = (n) => {
+      if (n === 0) return ''
+      let result = ''
+      const str = n.toString()
+      const len = str.length
+      
+      for (let i = 0; i < len; i++) {
+        const digit = parseInt(str[i])
+        const position = len - i - 1
+        
+        if (digit === 0) continue
+        
+        if (position === 1 && digit === 1) {
+          result += 'สิบ'
+        } else if (position === 1 && digit === 2) {
+          result += 'ยี่สิบ'
+        } else if (position === 0 && digit === 1 && len > 1) {
+          result += 'เอ็ด'
+        } else {
+          result += thaiNumbers[digit] + thaiUnits[position]
+        }
+      }
+      return result
+    }
+    
+    let result = ''
+    const millions = Math.floor(num / 1000000)
+    const remainder = num % 1000000
+    
+    if (millions > 0) {
+      result += convertLessThanMillion(millions) + 'ล้าน'
+    }
+    if (remainder > 0) {
+      result += convertLessThanMillion(remainder)
+    }
+    
+    return result + 'บาทถ้วน'
+  }
+
   // Handle field change
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -423,149 +469,144 @@ export default function ProjectRequestForm({
                 </Button>
               </div>
               
-              {/* Document Preview */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                {/* Document Header */}
-                <div className="bg-slate-800 text-white px-4 py-2 text-xs flex items-center gap-2">
-                  <i className="fa-solid fa-file-pdf"></i>
-                  <span>บันทึกข้อความ</span>
-                </div>
-                
+              {/* Document Preview - Official Format */}
+              <div className="bg-white rounded-lg shadow-sm border border-slate-300 overflow-hidden">
                 {/* Document Content */}
-                <div className="p-4 text-xs leading-relaxed space-y-3 max-h-[600px] overflow-y-auto">
-                  {/* Official Header */}
-                  <div className="text-center border-b border-slate-200 pb-3">
-                    <p className="font-bold text-sm">บันทึกข้อความ</p>
-                  </div>
-                  
-                  {/* Metadata */}
-                  <div className="space-y-1 text-slate-600">
-                    <p><strong>ส่วนราชการ:</strong> ศูนย์ RSC มจธ.</p>
-                    <p><strong>ที่:</strong> {formData.documentNumber || 'อว 7601/.....'}</p>
-                    <p><strong>วันที่:</strong> {formatThaiDate(new Date().toISOString().split('T')[0])}</p>
-                  </div>
-                  
-                  <Divider className="my-2" />
-                  
-                  {/* Subject */}
-                  <div>
-                    <p><strong>เรื่อง:</strong> ขออนุมัติ{formData.subProjectName || '.....................'}</p>
-                  </div>
-                  
-                  {/* To */}
-                  <div>
-                    <p><strong>เรียน:</strong> ผู้อำนวยการศูนย์ RSC</p>
-                  </div>
-                  
-                  <Divider className="my-2" />
-                  
-                  {/* Body */}
-                  <div className="space-y-2 text-slate-700">
-                    <p className="indent-8">
-                      ตามที่ศูนย์ RSC ได้ดำเนินงาน
-                      {formData.parentProject 
-                        ? parentProjects.find(p => p.value === formData.parentProject)?.label 
-                        : '.....................'
-                      } 
-                      ประจำปีงบประมาณ {formData.fiscalYear} นั้น
-                    </p>
+                <div className="max-h-[700px] overflow-y-auto">
+                  <div className="p-6 text-[11px] leading-relaxed font-sarabun">
                     
-                    <p className="indent-8">
-                      บัดนี้ {user?.name || 'ข้าพเจ้า'} มีความประสงค์ขออนุมัติ
-                      <strong>{formData.subProjectName || '.....................'}</strong>
-                      {formData.objectives && (
-                        <> โดยมีวัตถุประสงค์{formData.objectives}</>
-                      )}
-                      {formData.targetGroup && formData.targetCount && (
-                        <> กลุ่มเป้าหมาย {formData.targetGroup} จำนวน {formData.targetCount} คน</>
-                      )}
-                      {formData.location && (
-                        <> ณ {formData.location} {formData.province && `จังหวัด${formData.province}`}</>
-                      )}
-                      {formData.startDate && (
-                        <> ในวันที่ {formatThaiDate(formData.startDate)}
-                        {formData.endDate && formData.endDate !== formData.startDate && (
-                          <> ถึงวันที่ {formatThaiDate(formData.endDate)}</>
-                        )}
-                        </>
-                      )}
-                    </p>
-                    
-                    {/* Budget Summary */}
-                    {totalBudget > 0 && (
-                      <p className="indent-8">
-                        โดยใช้งบประมาณรวมทั้งสิ้น <strong className="text-primary-600">{totalBudget.toLocaleString()}</strong> บาท 
-                        ({formData.budgetSource === 'royal-fund' ? 'งบโครงการหลวง' : 
-                          formData.budgetSource === 'university' ? 'งบมหาวิทยาลัย' : 'งบภายนอก'})
-                      </p>
-                    )}
-                    
-                    {/* Schedule Summary */}
-                    {formData.schedule.length > 0 && (
-                      <div className="mt-3">
-                        <p className="font-medium mb-1">กำหนดการ:</p>
-                        <div className="pl-4 space-y-0.5">
-                          {formData.schedule.map((item, idx) => (
-                            <p key={idx} className="text-slate-600">
-                              • {item.date && formatThaiDate(item.date)} {item.time && `เวลา ${item.time} น.`} {item.activity}
-                            </p>
-                          ))}
-                        </div>
+                    {/* Header with Logo */}
+                    <div className="flex items-start gap-4 mb-1">
+                      {/* KMUTT Logo */}
+                      <img 
+                        src="https://www.kmutt.ac.th/wp-content/uploads/2020/09/KMUTT_CI_Primary_Logo-Full.png" 
+                        alt="KMUTT Logo"
+                        className="w-16 h-auto object-contain"
+                      />
+                      {/* Title */}
+                      <div className="flex-1 text-center pt-2">
+                        <h1 className="text-base font-bold">บันทึกข้อความ</h1>
                       </div>
-                    )}
-                    
-                    {/* Expense Summary */}
-                    {formData.expenses.length > 0 && (
-                      <div className="mt-3">
-                        <p className="font-medium mb-1">รายละเอียดค่าใช้จ่าย:</p>
-                        <div className="border border-slate-200 rounded overflow-hidden">
-                          <table className="w-full text-xs">
-                            <thead className="bg-slate-50">
-                              <tr>
-                                <th className="px-2 py-1 text-left">รายการ</th>
-                                <th className="px-2 py-1 text-right">จำนวนเงิน</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {formData.expenses.map((item, idx) => (
-                                <tr key={idx}>
-                                  <td className="px-2 py-1">{item.description || '-'}</td>
-                                  <td className="px-2 py-1 text-right">{(item.amount || 0).toLocaleString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                            <tfoot className="bg-primary-50">
-                              <tr>
-                                <td className="px-2 py-1 font-bold">รวม</td>
-                                <td className="px-2 py-1 text-right font-bold text-primary-600">{totalBudget.toLocaleString()}</td>
-                              </tr>
-                            </tfoot>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <p className="indent-8 mt-3">
-                      จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
-                    </p>
-                  </div>
-                  
-                  {/* Signature */}
-                  <div className="mt-6 text-center">
-                    <p className="mb-8">(ลงชื่อ)...................................</p>
-                    <p>({user?.name || '..............................'})</p>
-                    <p className="text-slate-500">ผู้ขออนุมัติ</p>
-                  </div>
-                  
-                  {/* Approval Section */}
-                  <div className="mt-6 pt-4 border-t border-dashed border-slate-300">
-                    <p className="font-medium mb-2">ความเห็นผู้บังคับบัญชา</p>
-                    <div className="h-16 border border-slate-200 rounded bg-slate-50"></div>
-                    <div className="mt-4 text-center">
-                      <p className="mb-8">(ลงชื่อ)...................................</p>
-                      <p>(..............................)</p>
-                      <p className="text-slate-500">ผู้อำนวยการศูนย์ RSC</p>
+                      {/* Spacer for balance */}
+                      <div className="w-16"></div>
                     </div>
+
+                    {/* Document Metadata */}
+                    <div className="space-y-0.5 mt-4">
+                      <div className="flex">
+                        <span className="font-bold w-20">ส่วนงาน</span>
+                        <span>ศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ โทร. 9682</span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-20">ที่</span>
+                        <span>{formData.documentNumber || 'อว xxxx/...........'}</span>
+                        <span className="ml-auto">
+                          <span className="font-bold">วันที่</span> {formatThaiDate(new Date().toISOString().split('T')[0])}
+                        </span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-20">เรื่อง</span>
+                        <span>ขออนุมัติ{formData.subProjectName || '......................................'}</span>
+                      </div>
+                    </div>
+
+                    {/* Horizontal Line */}
+                    <div className="border-b-2 border-slate-400 my-3"></div>
+
+                    {/* To */}
+                    <div className="mb-4">
+                      <span className="font-bold">เรียน</span>
+                      <span className="ml-2">ผู้อำนวยการศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ</span>
+                    </div>
+                    
+                    {/* Body Content */}
+                    <div className="space-y-3 text-slate-800">
+                      {/* Opening Paragraph */}
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        ตามที่ศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ ได้ดำเนินงาน
+                        {formData.parentProject 
+                          ? parentProjects.find(p => p.value === formData.parentProject)?.label 
+                          : '...................................................'
+                        } 
+                        {' '}ประจำปีงบประมาณ พ.ศ. {formData.fiscalYear} นั้น
+                      </p>
+                      
+                      {/* Main Request */}
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        บัดนี้ {user?.name || 'ข้าพเจ้า'} มีความประสงค์ขออนุมัติดำเนินงาน
+                        <span className="font-semibold">{formData.subProjectName || '......................................'}</span>
+                        {formData.objectives && (
+                          <> โดยมีวัตถุประสงค์{formData.objectives}</>
+                        )}
+                        {formData.targetGroup && formData.targetCount && (
+                          <> กลุ่มเป้าหมาย {formData.targetGroup} จำนวน {formData.targetCount} คน</>
+                        )}
+                        {formData.location && (
+                          <> ณ {formData.location}{formData.province && ` จังหวัด${formData.province}`}</>
+                        )}
+                        {formData.startDate && (
+                          <> ในวันที่ {formatThaiDate(formData.startDate)}
+                          {formData.endDate && formData.endDate !== formData.startDate && (
+                            <> ถึงวันที่ {formatThaiDate(formData.endDate)}</>
+                          )}
+                          </>
+                        )}
+                        {' '}รายละเอียดตามสิ่งที่ส่งมาด้วย
+                      </p>
+                      
+                      {/* Budget Paragraph */}
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        โดยใช้งบประมาณจาก
+                        {formData.budgetSource === 'royal-fund' ? 'โครงการหลวง' : 
+                          formData.budgetSource === 'university' ? 'งบมหาวิทยาลัย' : 'งบภายนอก'}
+                        {formData.parentProject && (
+                          <> ({parentProjects.find(p => p.value === formData.parentProject)?.label})</>
+                        )}
+                        {' '}รวมเป็นเงินทั้งสิ้น{' '}
+                        <span className="font-semibold">{totalBudget.toLocaleString()}</span> บาท 
+                        ({numberToThaiText(totalBudget)})
+                      </p>
+                      
+                      {/* Closing */}
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
+                      </p>
+                    </div>
+                    
+                    {/* Requester Signature - Right aligned box, center text */}
+                    <div className="mt-8 flex justify-end">
+                      <div className="text-center">
+                        <p className="mb-1">(ลงชื่อ) ............................................</p>
+                        <p className="mb-1">( {user?.name || '..........................................'} )</p>
+                        <p className="text-slate-600">{user?.position || 'ตำแหน่งในองค์กร'}</p>
+                        <p className="text-slate-500 text-[10px]">ผู้ขออนุมัติ (ผู้ประสานงาน / หัวหน้าโครงการ)</p>
+                      </div>
+                    </div>
+                    
+                    {/* RSC Director Opinion Section */}
+                    <div className="mt-8 pt-4 border-t border-slate-300">
+                      {/* Two signature columns with headers */}
+                      <div className="flex justify-between">
+                        {/* Left - RSC Director */}
+                        <div className="text-center flex-1">
+                          <p className="text-left mb-4">เรียน ผอ.สรบ เพื่อโปรดพิจารณาอนุมัติ</p>
+                          <p className="mb-1">ลงชื่อ............................................</p>
+                          <p className="mb-1">(นายศุเรนทร์ ฐปนางกูร)</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการศูนย์ส่งเสริมและสนับสนุน</p>
+                          <p className="text-slate-600 text-[11px]">มูลนิธิโครงการหลวงและโครงการตามพระราชดำริ</p>
+                        </div>
+                        
+                        {/* Right - Institute Director Approval */}
+                        <div className="text-center flex-1">
+                          <p className="font-semibold mb-4">อนุมัติ</p>
+                          <p className="mb-1">ลงชื่อ............................................</p>
+                          <p className="mb-1">( ชื่อ นามสกุล )</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการ</p>
+                          <p className="text-slate-600 text-[11px]">สถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ</p>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>

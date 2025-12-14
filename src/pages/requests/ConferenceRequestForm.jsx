@@ -571,198 +571,204 @@ export default function ConferenceRequestForm({
           {/* Right Column - Preview */}
           <div className="xl:col-span-1">
             <div className="sticky top-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Card className="p-4">
+                <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <i className="fa-solid fa-eye text-primary-600"></i>
                   ตัวอย่างเอกสาร
                 </h2>
 
-                {/* Preview Document */}
-                <div className="bg-white border-2 border-gray-200 rounded-lg p-4 text-xs leading-relaxed">
-                  {/* Header */}
-                  <div className="text-center mb-4">
-                    <p className="font-bold text-sm">บันทึกข้อความ</p>
-                  </div>
+                {/* Document Preview - A4 Ratio */}
+                <div className="bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
+                  <div className="max-h-[600px] overflow-y-auto">
+                    <div className="p-4 text-[10px] leading-relaxed font-sarabun">
+                      {/* Header */}
+                      <div className="text-center mb-4">
+                        <p className="font-bold text-xs">บันทึกข้อความ</p>
+                      </div>
 
-                  {/* Document Info */}
-                  <div className="space-y-1 mb-4">
-                    <p><strong>ส่วนราชการ</strong> สถาบันวิจัยและพัฒนาแห่ง มจธ.</p>
-                    <p><strong>ที่</strong> {formData.documentNumber || 'อว 7601/........'}</p>
-                    <p><strong>วันที่</strong> {formatThaiDate(new Date().toISOString().split('T')[0])}</p>
-                  </div>
+                      {/* Document Info */}
+                      <div className="space-y-1 mb-3">
+                        <p><strong>ส่วนราชการ</strong> สถาบันวิจัยและพัฒนาแห่ง มจธ.</p>
+                        <p><strong>ที่</strong> {formData.documentNumber || 'อว 7601/........'}</p>
+                        <p><strong>วันที่</strong> {formatThaiDate(new Date().toISOString().split('T')[0])}</p>
+                      </div>
 
-                  <Divider className="my-3" />
+                      <Divider className="my-2" />
 
-                  {/* Subject */}
-                  <p className="mb-4">
-                    <strong>เรื่อง</strong> ขออนุมัติ{getRequestTypeLabel()}
-                    {formData.eventName && ` "${formData.eventName}"`}
-                  </p>
-
-                  <p className="mb-4"><strong>เรียน</strong> ผู้อำนวยการสถาบันวิจัยและพัฒนาแห่ง มจธ.</p>
-
-                  {/* Content */}
-                  <div className="space-y-3 mb-4">
-                    <p className="text-justify indent-8">
-                      ด้วยข้าพเจ้า {user?.name || '....................'} 
-                      ตำแหน่ง {user?.position || 'นักวิจัย'} 
-                      มีความประสงค์ขออนุมัติ{getRequestTypeLabel()}
-                      {formData.eventName && ` "${formData.eventName}"`}
-                      {formData.organizer && ` จัดโดย ${formData.organizer}`}
-                    </p>
-
-                    {formData.eventLocation && (
-                      <p className="indent-8">
-                        <strong>สถานที่:</strong> {formData.eventLocation}
-                        {formData.eventProvince && `, ${formData.eventProvince}`}
-                        {formData.travelRegion === 'international' && formData.eventCountry && `, ${formData.eventCountry}`}
+                      {/* Subject */}
+                      <p className="mb-2">
+                        <strong>เรื่อง</strong> ขออนุมัติ{getRequestTypeLabel()}
+                        {formData.eventName && ` "${formData.eventName}"`}
                       </p>
-                    )}
 
-                    {(formData.eventStartDate || formData.eventEndDate) && (
-                      <p className="indent-8">
-                        <strong>วันที่จัดงาน:</strong> {formatThaiDate(formData.eventStartDate)}
-                        {formData.eventEndDate && formData.eventEndDate !== formData.eventStartDate && 
-                          ` - ${formatThaiDate(formData.eventEndDate)}`}
-                      </p>
-                    )}
+                      <p className="mb-2"><strong>เรียน</strong> ผู้อำนวยการสถาบันวิจัยและพัฒนาแห่ง มจธ.</p>
 
-                    {(formData.travelStartDate || formData.travelEndDate) && (
-                      <p className="indent-8">
-                        <strong>ระยะเวลาเดินทาง:</strong> {formatThaiDate(formData.travelStartDate)}
-                        {formData.travelEndDate && formData.travelEndDate !== formData.travelStartDate && 
-                          ` - ${formatThaiDate(formData.travelEndDate)}`}
-                        {formData.travelStartDate && formData.travelEndDate && 
-                          ` (${calculateDays(formData.travelStartDate, formData.travelEndDate)} วัน)`}
-                      </p>
-                    )}
-                  </div>
+                      {/* Content */}
+                      <div className="space-y-2 mb-3">
+                        <p className="text-justify indent-4">
+                          ด้วยข้าพเจ้า {user?.name || '....................'} 
+                          ตำแหน่ง {user?.position || 'นักวิจัย'} 
+                          มีความประสงค์ขออนุมัติ{getRequestTypeLabel()}
+                          {formData.eventName && ` "${formData.eventName}"`}
+                          {formData.organizer && ` จัดโดย ${formData.organizer}`}
+                        </p>
 
-                  {/* Purpose */}
-                  {formData.purpose && (
-                    <div className="mb-4">
-                      <p className="font-bold mb-1">วัตถุประสงค์:</p>
-                      <p className="text-justify indent-8">{formData.purpose}</p>
-                    </div>
-                  )}
+                        {formData.eventLocation && (
+                          <p className="indent-4">
+                            <strong>สถานที่:</strong> {formData.eventLocation}
+                            {formData.eventProvince && `, ${formData.eventProvince}`}
+                            {formData.travelRegion === 'international' && formData.eventCountry && `, ${formData.eventCountry}`}
+                          </p>
+                        )}
 
-                  {/* Attendees */}
-                  {formData.attendees.length > 0 && (
-                    <div className="mb-4">
-                      <p className="font-bold mb-1">รายชื่อผู้เดินทาง:</p>
-                      <AttendeeTable value={formData.attendees} readOnly />
-                    </div>
-                  )}
+                        {(formData.eventStartDate || formData.eventEndDate) && (
+                          <p className="indent-4">
+                            <strong>วันที่จัดงาน:</strong> {formatThaiDate(formData.eventStartDate)}
+                            {formData.eventEndDate && formData.eventEndDate !== formData.eventStartDate && 
+                              ` - ${formatThaiDate(formData.eventEndDate)}`}
+                          </p>
+                        )}
 
-                  {/* Budget Summary */}
-                  <div className="mb-4">
-                    <p className="font-bold mb-2">สรุปค่าใช้จ่าย:</p>
-                    <div className="border border-gray-300 rounded">
-                      <table className="w-full text-xs">
-                        <tbody>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">ค่าลงทะเบียน</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.registrationFee.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">ค่าเบี้ยเลี้ยง</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.perDiem.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">ค่าที่พัก</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.accommodation.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">ค่าพาหนะเดินทาง</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.travelFare.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">เงินชดเชยพาหนะส่วนตัว</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.personalVehicleCompensation.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1 border-b border-gray-200">ค่าธรรมเนียม/ค่าใช้จ่ายอื่นๆ</td>
-                            <td className="px-2 py-1 border-b border-gray-200 text-right">
-                              {calculations.otherExpenses.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                          <tr className="bg-primary-50 font-bold">
-                            <td className="px-2 py-1">รวมทั้งสิ้น</td>
-                            <td className="px-2 py-1 text-right text-primary-700">
-                              {calculations.grandTotal.toLocaleString()} บาท
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    {formData.budgetSource && (
-                      <p className="mt-2 text-gray-600">
-                        <strong>แหล่งงบประมาณ:</strong> {getBudgetSourceLabel()}
-                        {formData.parentProject && ` (${getProjectName()})`}
-                      </p>
-                    )}
-                  </div>
+                        {(formData.travelStartDate || formData.travelEndDate) && (
+                          <p className="indent-4">
+                            <strong>ระยะเวลาเดินทาง:</strong> {formatThaiDate(formData.travelStartDate)}
+                            {formData.travelEndDate && formData.travelEndDate !== formData.travelStartDate && 
+                              ` - ${formatThaiDate(formData.travelEndDate)}`}
+                            {formData.travelStartDate && formData.travelEndDate && 
+                              ` (${calculateDays(formData.travelStartDate, formData.travelEndDate)} วัน)`}
+                          </p>
+                        )}
+                      </div>
 
-                  <Divider className="my-3" />
+                      {/* Purpose */}
+                      {formData.purpose && (
+                        <div className="mb-3">
+                          <p className="font-bold mb-1">วัตถุประสงค์:</p>
+                          <p className="text-justify indent-4">{formData.purpose}</p>
+                        </div>
+                      )}
 
-                  {/* Signature */}
-                  <div className="mt-6 text-center">
-                    <p className="mb-8">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</p>
-                    <div className="inline-block text-center">
-                      <p className="mb-8">ลงชื่อ .................................</p>
-                      <p>({user?.name || '.......................'})</p>
-                      <p>{user?.position || 'นักวิจัย'}</p>
-                    </div>
-                  </div>
+                      {/* Attendees */}
+                      {formData.attendees.length > 0 && (
+                        <div className="mb-3">
+                          <p className="font-bold mb-1">รายชื่อผู้เดินทาง:</p>
+                          <AttendeeTable value={formData.attendees} readOnly />
+                        </div>
+                      )}
 
-                  <Divider className="my-4" />
+                      {/* Budget Summary */}
+                      <div className="mb-3">
+                        <p className="font-bold mb-2">สรุปค่าใช้จ่าย:</p>
+                        <div className="border border-gray-300 rounded overflow-hidden">
+                          <table className="w-full text-[9px]">
+                            <tbody>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">ค่าลงทะเบียน</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.registrationFee.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">ค่าเบี้ยเลี้ยง</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.perDiem.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">ค่าที่พัก</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.accommodation.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">ค่าพาหนะเดินทาง</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.travelFare.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">เงินชดเชยพาหนะส่วนตัว</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.personalVehicleCompensation.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1 border-b border-gray-200">ค่าใช้จ่ายอื่นๆ</td>
+                                <td className="px-2 py-1 border-b border-gray-200 text-right">
+                                  {calculations.otherExpenses.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                              <tr className="bg-primary-50 font-bold">
+                                <td className="px-2 py-1">รวมทั้งสิ้น</td>
+                                <td className="px-2 py-1 text-right text-primary-700">
+                                  {calculations.grandTotal.toLocaleString()} บาท
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        {formData.budgetSource && (
+                          <p className="mt-2 text-gray-600 text-[9px]">
+                            <strong>แหล่งงบประมาณ:</strong> {getBudgetSourceLabel()}
+                            {formData.parentProject && ` (${getProjectName()})`}
+                          </p>
+                        )}
+                      </div>
 
-                  {/* Approval Section */}
-                  <div className="space-y-4">
-                    <p className="font-bold">ความเห็นหัวหน้าโครงการ</p>
-                    <div className="border border-gray-300 rounded p-3 min-h-16 bg-gray-50">
-                      <p className="text-gray-400">รอการพิจารณา...</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="mb-6">ลงชื่อ .................................</p>
-                      <p>(........................................)</p>
-                      <p>หัวหน้าโครงการ</p>
-                    </div>
+                      <Divider className="my-2" />
 
-                    <Divider className="my-3" />
+                      {/* Signature */}
+                      <div className="mt-4 text-center">
+                        <p className="mb-6">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</p>
+                        <div className="inline-block text-center">
+                          <p className="mb-6">ลงชื่อ .................................</p>
+                          <p>({user?.name || '.......................'})</p>
+                          <p>{user?.position || 'นักวิจัย'}</p>
+                        </div>
+                      </div>
 
-                    <p className="font-bold">คำสั่งผู้อำนวยการ</p>
-                    <div className="flex gap-4 mb-3">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" disabled className="rounded" />
-                        <span>อนุมัติ</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" disabled className="rounded" />
-                        <span>ไม่อนุมัติ</span>
-                      </label>
-                    </div>
-                    <div className="border border-gray-300 rounded p-3 min-h-16 bg-gray-50">
-                      <p className="text-gray-400">รอการพิจารณา...</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="mb-6">ลงชื่อ .................................</p>
-                      <p>(........................................)</p>
-                      <p>ผู้อำนวยการสถาบันวิจัยและพัฒนาแห่ง มจธ.</p>
+                      <Divider className="my-3" />
+
+                      {/* Approval Section */}
+                      <div className="space-y-3">
+                        <p className="font-bold text-[9px]">ความเห็นหัวหน้าโครงการ</p>
+                        <div className="border border-gray-300 rounded p-2 min-h-12 bg-gray-50">
+                          <p className="text-gray-400 text-[8px]">รอการพิจารณา...</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="mb-4">ลงชื่อ ........................</p>
+                          <p className="text-[9px]">(หัวหน้าโครงการ)</p>
+                        </div>
+
+                        <Divider className="my-2" />
+
+                        <p className="font-bold text-[9px]">คำสั่งผู้อำนวยการ</p>
+                        <div className="flex gap-4 mb-2 text-[9px]">
+                          <label className="flex items-center gap-1">
+                            <span className="w-3 h-3 border border-gray-400 rounded-sm inline-block"></span>
+                            อนุมัติ
+                          </label>
+                          <label className="flex items-center gap-1">
+                            <span className="w-3 h-3 border border-gray-400 rounded-sm inline-block"></span>
+                            ไม่อนุมัติ
+                          </label>
+                        </div>
+                        <div className="border border-gray-300 rounded p-2 min-h-12 bg-gray-50">
+                          <p className="text-gray-400 text-[8px]">รอการพิจารณา...</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="mb-4">ลงชื่อ ........................</p>
+                          <p className="text-[9px]">(ผู้อำนวยการ)</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+                
+                <p className="text-[10px] text-gray-400 mt-2 text-center">
+                  * ตัวอย่างจะอัพเดทตามข้อมูลที่กรอก
+                </p>
               </Card>
             </div>
           </div>
