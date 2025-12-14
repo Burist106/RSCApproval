@@ -246,9 +246,9 @@ export default function ConferenceRequestForm({
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Left Column - Form Input */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="space-y-6">
             
             {/* Section 1: Basic Info */}
             <Card className="p-6">
@@ -569,7 +569,7 @@ export default function ConferenceRequestForm({
           </div>
 
           {/* Right Column - Preview */}
-          <div className="xl:col-span-1">
+          <div>
             <div className="sticky top-6">
               <Card className="p-4">
                 <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -577,9 +577,11 @@ export default function ConferenceRequestForm({
                   ตัวอย่างเอกสาร
                 </h2>
 
-                {/* Document Preview - A4 Ratio */}
-                <div className="bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
-                  <div className="max-h-[600px] overflow-y-auto">
+                {/* A4 Document Container */}
+                <div className="flex justify-center">
+                {/* Document Preview - A4 Size */}
+                <div className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden w-full max-w-[595px]" style={{ aspectRatio: '210/297' }}>
+                  <div className="h-full overflow-y-auto">
                     <div className="p-4 text-[10px] leading-relaxed font-sarabun">
                       {/* Header */}
                       <div className="text-center mb-4">
@@ -764,6 +766,7 @@ export default function ConferenceRequestForm({
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
                 
                 <p className="text-[10px] text-gray-400 mt-2 text-center">

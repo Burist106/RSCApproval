@@ -274,9 +274,9 @@ export default function CarRequestForm({
       )}
 
       {/* Main Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Form Section */}
-        <div className="xl:col-span-3 space-y-6">
+        <div className="space-y-6">
           
           {/* Section 1: ข้อมูลผู้ขอ */}
           <Card>
@@ -582,10 +582,10 @@ export default function CarRequestForm({
         </div>
 
         {/* Preview Section */}
-        <div className="xl:col-span-2">
+        <div>
           <div className="sticky top-4">
-            <Card className="bg-slate-100 border-none">
-              <div className="flex items-center justify-between mb-4">
+            <Card className="bg-slate-100 border-none p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   <i className="fa-solid fa-eye mr-2"></i>
                   ตัวอย่างเอกสาร
@@ -595,10 +595,12 @@ export default function CarRequestForm({
                 </Button>
               </div>
               
-              {/* Document Preview */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+              {/* A4 Document Container */}
+              <div className="flex justify-center">
+              {/* Document Preview - A4 Size */}
+              <div className="bg-white rounded-lg shadow-lg border border-slate-300 overflow-hidden w-full max-w-[595px]" style={{ aspectRatio: '210/297' }}>
                 {/* Document Content */}
-                <div className="max-h-[700px] overflow-y-auto">
+                <div className="h-full overflow-y-auto">
                   <div className="p-5 text-[11px] leading-relaxed font-sarabun">
                     
                     {/* Document Header with Logo */}
@@ -748,6 +750,7 @@ export default function CarRequestForm({
 
                   </div>
                 </div>
+              </div>
               </div>
               
               {/* Preview Info */}
