@@ -19,7 +19,7 @@ const mockRequest = {
   amount: 45000,
   project: 'โครงการหลวง A',
   creator: {
-    name: 'ดร.สมชาย ใจดี',
+    name: 'สมชาย ใจดี',
     email: 'somchai@kmutt.ac.th',
     department: 'ศูนย์ RSC',
   },

@@ -9,7 +9,7 @@ import { Button, Card, StatusBadge, Table, Input, Select } from '../../component
 
 // Mock pending requests for director approval
 const mockPendingRequests = [
-  { id: 'BD-089', type: 'project', typeName: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'waiting_approval', date: '2025-12-01', amount: 45000, requester: 'ดร.สมชาย ใจดี', verifiedBy: 'คุณสุดา ตรวจสอบ' },
+  { id: 'BD-089', type: 'project', typeName: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'waiting_approval', date: '2025-12-01', amount: 45000, requester: 'สมชาย ใจดี', verifiedBy: 'คุณสุดา ตรวจสอบ' },
   { id: 'BD-085', type: 'loan', typeName: 'ยืมเงิน', title: 'ค่าจัดกิจกรรมฝึกอบรม', status: 'waiting_approval', date: '2025-11-29', amount: 32000, requester: 'ดร.มานี มานะ', verifiedBy: 'คุณสุดา ตรวจสอบ' },
   { id: 'BD-083', type: 'travel', typeName: 'เดินทางราชการ', title: 'ประชุมวิชาการนานาชาติ', status: 'waiting_approval', date: '2025-11-27', amount: 55000, requester: 'รศ.สมหมาย หมายดี', verifiedBy: 'คุณสุดา ตรวจสอบ' },
   { id: 'BD-081', type: 'car', typeName: 'ขอใช้รถยนต์', title: 'ลงพื้นที่ดอยอินทนนท์', status: 'waiting_approval', date: '2025-11-25', amount: 1200, requester: 'ผศ.สมศรี ศรีสม', verifiedBy: 'คุณวิไล ไวตรวจ' },

@@ -19,11 +19,11 @@ const mockRequest = {
   amount: 45000,
   project: 'โครงการหลวง A',
   creator: {
-    name: 'ดร.สมชาย ใจดี',
+    name: 'สมชาย ใจดี',
     department: 'ศูนย์ RSC',
   },
   timeline: [
-    { step: 'สร้างคำขอ', date: '2025-12-01 10:30', user: 'ดร.สมชาย ใจดี', status: 'done' },
+    { step: 'สร้างคำขอ', date: '2025-12-01 10:30', user: 'สมชาย ใจดี', status: 'done' },
     { step: 'Admin ตรวจสอบ', date: '2025-12-01 14:15', user: 'คุณสุดา ตรวจสอบ', status: 'active' },
     { step: 'ผอ. อนุมัติ', date: '-', user: '-', status: 'pending' },
     { step: 'ออกเอกสาร', date: '-', user: '-', status: 'pending' },

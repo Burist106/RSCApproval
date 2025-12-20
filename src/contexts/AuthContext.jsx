@@ -12,7 +12,7 @@ const userAccounts = {
     id: 1,
     username: 'researcher',
     password: 'rsc123',
-    name: 'ดร.สมชาย ใจดี',
+    name: 'สมชาย ใจดี',
     email: 'somchai@kmutt.ac.th',
     role: 'researcher',
     roleLabel: 'B-Level (นักวิจัย)',

@@ -10,6 +10,7 @@ import {
   Divider,
   FileUpload,
 } from '../../components'
+import { fdCodes, getFDByAcc, getAccOptions, formatCurrency, getFDsByAcc } from '../../data/fdCodes'
 
 /**
  * LoanRequestForm
@@ -49,27 +50,27 @@ const getInitialFormData = (user) => ({
   faculty: 'RSC',
   subUnit: 'RSC',
   
-  // วัตถุประสงค์
+  // วัตถุประสงค์และจำนวนเงิน
   purpose: '',
+  loanAmount: '',
   
-  // กิจกรรม
-  activities: [
-    { id: 1, name: '', amount: 0, note: '' }
-  ],
-  
-  // ภายใต้โครงการ
+  // ภายใต้โครงการ (auto-filled from ACC)
   projectName: '',
+  documentSubject: '', // เรื่อง: ACC (รหัสโครงการ)
   
   // ระยะเวลาและวันที่
   startDate: '',
   endDate: '',
   returnDate: '',
   
-  // ประเภทเอกสาร/เงินยืม
+  // ประเภทเอกสาร/เงินยืม (auto-filled from ACC)
   docType: 'FD01',
   fdNumber: '',
   planCode: '',
   fundCode: '',
+  
+  // ACC Selection (main field for auto-fill)
+  selectedAcc: '',
   
   // ใบเสร็จรับเงินเลขที่
   receiptNumber: '',
@@ -107,6 +108,9 @@ export default function LoanRequestForm({
   const navigate = useNavigate()
   const { user } = useAuth()
   
+  // Fullscreen preview state
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState(false)
+  
   // Form state - merge initial data if provided
   const [formData, setFormData] = useState(() => {
     if (initialData) {
@@ -122,29 +126,178 @@ export default function LoanRequestForm({
     }
   }, [initialData])
 
-  // Calculate total
+  // Calculate total from loanAmount
   const totalAmount = useMemo(() => {
-    return formData.activities.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
-  }, [formData.activities])
+    return parseFloat(formData.loanAmount) || 0
+  }, [formData.loanAmount])
 
-  // Convert number to Thai text
+  // Convert number to Thai text (Full implementation)
   const numberToThaiText = (num) => {
     if (!num || num === 0) return 'ศูนย์บาทถ้วน'
     
     const ones = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
-    const teens = ['สิบ', 'สิบเอ็ด', 'สิบสอง', 'สิบสาม', 'สิบสี่', 'สิบห้า', 'สิบหก', 'สิบเจ็ด', 'สิบแปด', 'สิบเก้า']
-    const tens = ['', 'สิบ', 'ยี่สิบ', 'สามสิบ', 'สี่สิบ', 'ห้าสิบ', 'หกสิบ', 'เจ็ดสิบ', 'แปดสิบ', 'เก้าสิบ']
+    
+    const convertLessThanThousand = (n) => {
+      if (n === 0) return ''
+      
+      let result = ''
+      const hundred = Math.floor(n / 100)
+      const remainder = n % 100
+      const ten = Math.floor(remainder / 10)
+      const one = remainder % 10
+      
+      if (hundred > 0) {
+        result += ones[hundred] + 'ร้อย'
+      }
+      
+      if (ten > 0) {
+        if (ten === 1) {
+          result += 'สิบ'
+        } else if (ten === 2) {
+          result += 'ยี่สิบ'
+        } else {
+          result += ones[ten] + 'สิบ'
+        }
+      }
+      
+      if (one > 0) {
+        if (one === 1 && (ten > 0 || hundred > 0)) {
+          result += 'เอ็ด'
+        } else {
+          result += ones[one]
+        }
+      }
+      
+      return result
+    }
     
     const n = Math.floor(num)
-    if (n < 10) return ones[n] + 'บาทถ้วน'
-    if (n < 20) return teens[n - 10] + 'บาทถ้วน'
-    if (n < 100) {
-      const ten = Math.floor(n / 10)
-      const one = n % 10
-      return tens[ten] + (one === 1 ? 'เอ็ด' : ones[one]) + 'บาทถ้วน'
+    if (n === 0) return 'ศูนย์บาทถ้วน'
+    
+    let result = ''
+    
+    // ล้าน (Million)
+    const million = Math.floor(n / 1000000)
+    if (million > 0) {
+      if (million > 999) {
+        // Handle billion+ by recursion
+        result += numberToThaiText(million).replace('บาทถ้วน', '') + 'ล้าน'
+      } else {
+        result += convertLessThanThousand(million) + 'ล้าน'
+      }
     }
-    // Simplified for demo - would need full implementation for larger numbers
-    return num.toLocaleString() + ' บาทถ้วน'
+    
+    // แสน, หมื่น, พัน (Hundred thousand, Ten thousand, Thousand)
+    const thousand = Math.floor((n % 1000000) / 1000)
+    if (thousand > 0) {
+      result += convertLessThanThousand(thousand) + 'พัน'
+    }
+    
+    // ร้อย, สิบ, หน่วย (Hundred, Ten, One)
+    const remainder = n % 1000
+    if (remainder > 0) {
+      result += convertLessThanThousand(remainder)
+    }
+    
+    // Fix: Thai numbering system uses different grouping
+    // Re-implement with proper Thai grouping
+    result = ''
+    let remaining = n
+    
+    // ล้าน (1,000,000)
+    const millions = Math.floor(remaining / 1000000)
+    if (millions > 0) {
+      if (millions >= 1000000) {
+        result += numberToThaiText(millions).replace('บาทถ้วน', '') + 'ล้าน'
+      } else {
+        result += convertToThaiGroup(millions) + 'ล้าน'
+      }
+      remaining = remaining % 1000000
+    }
+    
+    // แสน (100,000)
+    const hundredThousands = Math.floor(remaining / 100000)
+    if (hundredThousands > 0) {
+      result += ones[hundredThousands] + 'แสน'
+      remaining = remaining % 100000
+    }
+    
+    // หมื่น (10,000)
+    const tenThousands = Math.floor(remaining / 10000)
+    if (tenThousands > 0) {
+      result += ones[tenThousands] + 'หมื่น'
+      remaining = remaining % 10000
+    }
+    
+    // พัน (1,000)
+    const thousands = Math.floor(remaining / 1000)
+    if (thousands > 0) {
+      result += ones[thousands] + 'พัน'
+      remaining = remaining % 1000
+    }
+    
+    // ร้อย (100)
+    const hundreds = Math.floor(remaining / 100)
+    if (hundreds > 0) {
+      result += ones[hundreds] + 'ร้อย'
+      remaining = remaining % 100
+    }
+    
+    // สิบ (10)
+    const tensDigit = Math.floor(remaining / 10)
+    if (tensDigit > 0) {
+      if (tensDigit === 1) {
+        result += 'สิบ'
+      } else if (tensDigit === 2) {
+        result += 'ยี่สิบ'
+      } else {
+        result += ones[tensDigit] + 'สิบ'
+      }
+      remaining = remaining % 10
+    }
+    
+    // หน่วย (1)
+    if (remaining > 0) {
+      if (remaining === 1 && n > 10) {
+        result += 'เอ็ด'
+      } else {
+        result += ones[remaining]
+      }
+    }
+    
+    return result + 'บาทถ้วน'
+    
+    function convertToThaiGroup(n) {
+      let r = ''
+      let rem = n
+      
+      const hT = Math.floor(rem / 100000)
+      if (hT > 0) { r += ones[hT] + 'แสน'; rem = rem % 100000 }
+      
+      const tT = Math.floor(rem / 10000)
+      if (tT > 0) { r += ones[tT] + 'หมื่น'; rem = rem % 10000 }
+      
+      const th = Math.floor(rem / 1000)
+      if (th > 0) { r += ones[th] + 'พัน'; rem = rem % 1000 }
+      
+      const h = Math.floor(rem / 100)
+      if (h > 0) { r += ones[h] + 'ร้อย'; rem = rem % 100 }
+      
+      const t = Math.floor(rem / 10)
+      if (t > 0) {
+        if (t === 1) r += 'สิบ'
+        else if (t === 2) r += 'ยี่สิบ'
+        else r += ones[t] + 'สิบ'
+        rem = rem % 10
+      }
+      
+      if (rem > 0) {
+        if (rem === 1 && n > 10) r += 'เอ็ด'
+        else r += ones[rem]
+      }
+      
+      return r
+    }
   }
 
   // Format Thai date
@@ -161,6 +314,48 @@ export default function LoanRequestForm({
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
+
+  // Handle ACC selection - auto-fill related fields
+  const handleAccChange = (acc) => {
+    const fdData = getFDByAcc(acc)
+    if (fdData) {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        projectName: fdData.projectName,
+        documentSubject: `${acc} (${fdData.projectCode})`, // เรื่อง: ACC (รหัสโครงการ)
+        fdNumber: fdData.fdCode,
+        planCode: fdData.planCode,      // รหัสแผนงาน (FD02) เช่น 30002000
+        planName: fdData.planName,      // ชื่อแผนงาน
+        fundCode: fdData.fundCode,      // รหัสแหล่งเงิน (FD05) เช่น S04
+        fundName: fdData.fundName,      // ชื่อแหล่งเงิน
+        // Additional fields from new data structure
+        projectCode: fdData.projectCode,
+        expenseCode: fdData.expenseCode,
+        expenseName: fdData.expenseName,
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        projectName: '',
+        documentSubject: '',
+        fdNumber: '',
+        planCode: '',
+        planName: '',
+        fundCode: '',
+        fundName: '',
+        projectCode: '',
+        expenseCode: '',
+        expenseName: '',
+      }))
+    }
+  }
+
+  // Get selected FD data for display
+  const selectedFDData = useMemo(() => {
+    return getFDByAcc(formData.selectedAcc)
+  }, [formData.selectedAcc])
 
   // Handle activity change
   const handleActivityChange = (index, field, value) => {
@@ -364,110 +559,117 @@ export default function LoanRequestForm({
             </div>
           </Card>
 
-          {/* Section 3: Purpose & Activities */}
-          <Card>
+          {/* Section 3: ACC Selection & Purpose - MAIN INPUT */}
+          <Card className="border-2 border-primary-200 bg-primary-50/30">
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <span className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm">3</span>
-              วัตถุประสงค์และกิจกรรม
+              <span className="w-7 h-7 bg-primary-500 text-white rounded-lg flex items-center justify-center text-sm">3</span>
+              เลือกโครงการและระบุเหตุผล
+              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full font-medium ml-auto">
+                <i className="fa-solid fa-star mr-1"></i>
+                ส่วนสำคัญ
+              </span>
             </h2>
             
             <div className="space-y-4">
-              <Textarea
-                label="มีความประสงค์ขอยืมเงินจาก มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี เพื่อใช้ในกิจกรรมของส่วนงาน ดังนี้"
-                value={formData.purpose}
-                onChange={(e) => handleChange('purpose', e.target.value)}
-                placeholder="ระบุวัตถุประสงค์การยืมเงิน..."
-                rows={2}
-              />
-
-              {/* Activities Table */}
+              {/* ACC Selection - Main dropdown */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    <i className="fa-solid fa-list-check mr-2 text-slate-400"></i>
-                    ชื่อกิจกรรม
-                  </label>
-                  <Button variant="outline" size="sm" onClick={handleAddActivity}>
-                    <i className="fa-solid fa-plus"></i>
-                    เพิ่มกิจกรรม
-                  </Button>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  เลือกรหัส ACC / โครงการ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  value={formData.selectedAcc}
+                  onChange={(e) => handleAccChange(e.target.value)}
+                >
+                  <option value="">-- เลือกโครงการ --</option>
+                  {getAccOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} (คงเหลือ: {formatCurrency(opt.remaining)} บาท)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Show selected project info */}
+              {selectedFDData && (
+                <div className="bg-white border border-primary-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center shrink-0">
+                      <i className="fa-solid fa-folder-open text-primary-600"></i>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-slate-800 text-sm">{selectedFDData.projectName}</h4>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
+                        <p className="text-slate-500">รหัสหน่วยงาน (FD01): <span className="text-slate-700 font-medium">{selectedFDData.fdCode}</span></p>
+                        <p className="text-slate-500">รหัสแผนงาน (FD02): <span className="text-slate-700 font-medium">{selectedFDData.planCode}</span></p>
+                        <p className="text-slate-500">รหัสโครงการ (FD03): <span className="text-slate-700 font-medium">{selectedFDData.projectCode}</span></p>
+                        <p className="text-slate-500">รหัสหมวดรายจ่าย (FD04): <span className="text-slate-700 font-medium">{selectedFDData.expenseCode}</span></p>
+                        <p className="text-slate-500">รหัสแหล่งเงิน (FD05): <span className="text-slate-700 font-medium">{selectedFDData.fundCode}</span></p>
+                        <p className="text-slate-500">ปีงบประมาณ (FD06): <span className="text-slate-700 font-medium">{selectedFDData.fiscalYear}</span></p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs border-t border-slate-100 pt-2">
+                        <p className="text-slate-500">แผนงาน: <span className="text-slate-700">{selectedFDData.planName}</span></p>
+                        <p className="text-slate-500">หมวดรายจ่าย: <span className="text-slate-700">{selectedFDData.expenseName}</span></p>
+                        <p className="text-slate-500">แหล่งเงิน: <span className="text-slate-700">{selectedFDData.fundName}</span></p>
+                      </div>
+                      <div className="flex gap-4 mt-3 pt-3 border-t border-slate-100">
+                        <div className="text-center">
+                          <p className="text-xs text-slate-500">งบประมาณ</p>
+                          <p className="font-bold text-slate-800">{formatCurrency(selectedFDData.budget)} บาท</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-slate-500">ใช้ไปแล้ว</p>
+                          <p className="font-bold text-orange-600">{formatCurrency(selectedFDData.spent)} บาท</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-slate-500">คงเหลือ</p>
+                          <p className="font-bold text-green-600">{formatCurrency(selectedFDData.budget - selectedFDData.spent)} บาท</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-amber-50">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium text-slate-700 w-16">#</th>
-                        <th className="px-3 py-2 text-left font-medium text-slate-700">ชื่อกิจกรรม</th>
-                        <th className="px-3 py-2 text-right font-medium text-slate-700 w-40">จำนวนเงินรวม (บาท)</th>
-                        <th className="px-3 py-2 text-center font-medium text-slate-700 w-24">สหกรณ์</th>
-                        <th className="px-3 py-2 w-12"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {formData.activities.map((activity, index) => (
-                        <tr key={activity.id} className="group hover:bg-slate-50/50">
-                          <td className="px-3 py-2 text-slate-400">{index + 1}</td>
-                          <td className="px-2 py-2">
-                            <input
-                              type="text"
-                              value={activity.name}
-                              onChange={(e) => handleActivityChange(index, 'name', e.target.value)}
-                              placeholder="ระบุชื่อกิจกรรม..."
-                              className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            />
-                          </td>
-                          <td className="px-2 py-2">
-                            <input
-                              type="number"
-                              value={activity.amount}
-                              onChange={(e) => handleActivityChange(index, 'amount', e.target.value)}
-                              placeholder="0"
-                              className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-right"
-                            />
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 text-blue-500 rounded border-slate-300 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveActivity(index)}
-                              className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition mx-auto"
-                              disabled={formData.activities.length === 1}
-                            >
-                              <i className="fa-solid fa-trash text-xs"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-blue-50">
-                      <tr>
-                        <td colSpan={2} className="px-3 py-2 font-bold text-slate-800 text-right">
-                          รวมทั้งสิ้น
-                        </td>
-                        <td className="px-3 py-2 text-right font-bold text-blue-600 text-lg">
-                          {totalAmount.toLocaleString()}
-                        </td>
-                        <td colSpan={2} className="px-3 py-2 text-sm text-slate-500">
-                          บาท
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
+              )}
+
+              {/* Amount Input */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    จำนวนเงินที่ขอยืม (บาท) <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={formData.loanAmount || ''}
+                    onChange={(e) => handleChange('loanAmount', e.target.value)}
+                    placeholder="0"
+                  />
+                  {selectedFDData && parseFloat(formData.loanAmount) > (selectedFDData.budget - selectedFDData.spent) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      <i className="fa-solid fa-exclamation-triangle mr-1"></i>
+                      จำนวนเงินเกินงบประมาณคงเหลือ!
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-end">
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 w-full">
+                    <p className="text-xs text-slate-500 mb-1">จำนวนเงิน (ตัวอักษร)</p>
+                    <p className="font-medium text-blue-700">{numberToThaiText(parseFloat(formData.loanAmount) || 0)}</p>
+                  </div>
                 </div>
               </div>
 
-              <Input
-                label="ภายใต้โครงการ"
-                value={formData.projectName}
-                onChange={(e) => handleChange('projectName', e.target.value)}
-                placeholder="ชื่อโครงการ (ถ้ามี)"
-              />
+              {/* Purpose - Main input */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  เหตุผลความจำเป็น <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={formData.purpose}
+                  onChange={(e) => handleChange('purpose', e.target.value)}
+                  placeholder="ระบุเหตุผลความจำเป็นในการยืมเงิน..."
+                  rows={3}
+                />
+              </div>
 
               <p className="text-xs text-slate-500">
                 ** ระบุระยะเวลาดำเนินงาน และวันที่ขอรับเงิน
@@ -496,41 +698,67 @@ export default function LoanRequestForm({
             </div>
           </Card>
 
-          {/* Section 4: Document Type */}
+          {/* Section 4: Auto-filled Document Info */}
           <Card>
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
               <span className="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm">4</span>
-              ตัวอักษร/ตัวเลขระบุจำนวนเงิน
+              ข้อมูลเอกสาร (กรอกอัตโนมัติจากโครงการ)
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium ml-auto">
+                <i className="fa-solid fa-magic mr-1"></i>
+                Auto-fill
+              </span>
             </h2>
             
             <div className="space-y-4">
+              <Input
+                label="เรื่อง"
+                value={formData.documentSubject}
+                disabled
+                className="bg-slate-50"
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="หน่วยงาน (FD01)"
+                  value={formData.fdNumber}
+                  disabled
+                  className="bg-slate-50"
+                />
                 <Select
                   label="ประเภทเอกสาร"
                   options={loanDocTypes}
                   value={formData.docType}
                   onChange={(e) => handleChange('docType', e.target.value)}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="หน่วยงาน (FD01)"
-                  value={formData.fdNumber}
-                  onChange={(e) => handleChange('fdNumber', e.target.value)}
-                  placeholder="รหัสหน่วยงาน FD01"
+                  label="รหัสแผนงาน (FD02)"
+                  value={formData.planCode}
+                  disabled
+                  className="bg-slate-50"
+                />
+                <Input
+                  label="แผนงาน"
+                  value={formData.planName || ''}
+                  disabled
+                  className="bg-slate-50"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="รหัสแผนงาน"
-                  value={formData.planCode}
-                  onChange={(e) => handleChange('planCode', e.target.value)}
-                  placeholder="รหัสแผนงาน"
+                  label="รหัสแหล่งเงิน (FD05)"
+                  value={formData.fundCode}
+                  disabled
+                  className="bg-slate-50"
                 />
                 <Input
-                  label="รหัสแหล่งเงิน"
-                  value={formData.fundCode}
-                  onChange={(e) => handleChange('fundCode', e.target.value)}
-                  placeholder="รหัสแหล่งเงิน"
+                  label="แหล่งเงิน"
+                  value={formData.fundName || ''}
+                  disabled
+                  className="bg-slate-50"
                 />
               </div>
 
@@ -689,229 +917,578 @@ export default function LoanRequestForm({
         </div>
 
         {/* Preview Section */}
-        <div>
-          <div className="sticky top-4">
-            <Card className="bg-slate-100 border-none p-4">
-              <div className="flex items-center justify-between mb-3">
+        <div className="h-[calc(100vh-120px)]">
+          <div className="sticky top-4 h-full flex flex-col">
+            <Card className="bg-slate-100 border-none p-4 flex-1 flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   <i className="fa-solid fa-eye mr-2"></i>
                   ตัวอย่างเอกสาร FO-TO-04
                 </h3>
-                <Button variant="ghost" size="sm">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenPreview(true)}
+                  className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                  title="ดู Preview แบบเต็มจอ"
+                >
                   <i className="fa-solid fa-expand"></i>
-                </Button>
+                </button>
               </div>
               
+              {/* Scrollable Preview Container */}
+              <div className="flex-1 overflow-y-auto pr-2">
               {/* A4 Document Container */}
               <div className="flex justify-center">
               {/* Document Preview - FO-TO-04 Style - A4 Size */}
-              <div className="bg-white rounded-lg shadow-lg border border-slate-300 overflow-hidden w-full max-w-[595px]" style={{ aspectRatio: '210/297' }}>
+              <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[595px]">
                 {/* Document Content */}
-                <div className="h-full overflow-y-auto">
-                  <div className="p-5 text-[11px] leading-relaxed font-sarabun">
+                <div>
+                  <div className="p-4 text-[9px] leading-relaxed font-sarabun">
                     
-                    {/* Header with Logo */}
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-3">
+                    {/* Header - PDTI Style matching PDF */}
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex items-center gap-2">
                         <img 
                           src="https://www.kmutt.ac.th/wp-content/uploads/2020/09/KMUTT_CI_Primary_Logo-Full.png" 
-                          alt="KMUTT Logo" 
-                          className="w-14 h-14 object-contain"
+                          alt="PDTI Logo" 
+                          className="w-10 h-10 object-contain"
                         />
                         <div>
-                          <p className="font-bold text-sm">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
-                          <p className="font-bold text-sm">สัญญาการยืมเงิน</p>
+                          <p className="font-bold text-[10px]">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
+                          <p className="font-bold text-[11px]">สัญญาการยืมเงิน</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="border border-slate-400 px-3 py-1 text-xs font-bold">FO-TO-04</div>
-                        <p className="mt-2 font-bold">กองคลัง</p>
-                        <p className="text-slate-600">เลขที่รับ</p>
+                      <div className="text-right text-[8px]">
+                        <div className="border border-slate-500 px-2 py-0.5 font-bold text-[9px] inline-block mb-0.5">FO-TO-04</div>
+                        <p className="font-bold">กองคลัง</p>
                       </div>
                     </div>
 
-                    {/* To Line */}
-                    <div className="flex justify-between border-b border-slate-300 pb-2 mb-2">
-                      <p><span className="font-bold">เรียน</span> ........<span className="font-semibold">ผอ.สรบ.</span>........</p>
-                      <p className="text-slate-600">เลขที่รับ</p>
+                    {/* To Line with Document Number */}
+                    <div className="flex justify-between items-center border-b border-slate-300 pb-1 mb-1">
+                      <p><span className="font-bold">เรียน</span> {formData.toDirector || 'ผู้อำนวยการสถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ'}</p>
+                      <p>เลขที่รับ <span className="border-b border-slate-400 px-2">{formData.documentNumber || '............'}</span></p>
                     </div>
 
-                    {/* Borrower Info - Yellow Background */}
-                    <div className="bg-amber-100 border border-amber-300 p-2 mb-2 text-[10px]">
-                      <p>
-                        <span className="font-bold">ข้าพเจ้า</span>...{formData.borrowerTitle}นำหน้า ชื่อ นามสกุล ผู้ยืม...<span className="font-bold">ตำแหน่ง</span>...ตำแหน่งในองค์กร(หัก)... <span className="font-bold">คณะ/สำนัก/กอง</span>...ชื่อหน่วยงานประธานคณะ/สำนัก (สรบ.)...
-                      </p>
-                      <p className="mt-1">
-                        <span className="font-bold">ภาควิชา/สาขาวิชา/หน่วยงาน</span>........ชื่อหน่วยงานย่อย..........({formData.subUnit || 'RSC'}).....วันที่.........
-                      </p>
-                    </div>
+                    {/* Borrower Info - Single line like PDF */}
+                    <p className="mb-0.5">
+                      <span className="font-bold">ข้าพเจ้า</span> <span className="border-b border-slate-400">{formData.borrowerTitle} {formData.borrowerFirstName} {formData.borrowerLastName || '...................'}</span>
+                      {' '}<span className="font-bold">ตำแหน่ง</span> <span className="border-b border-slate-400">{formData.position || '............'}</span>
+                      {' '}<span className="font-bold">คณะ/สำนัก/กอง (FD01)</span> <span className="border-b border-slate-400">{formData.department || '...................'}</span>
+                    </p>
+                    <p className="mb-1">
+                      <span className="font-bold">ภาควิชา/สายวิชา/หน่วยงาน (FD01)</span> <span className="border-b border-slate-400">{formData.faculty || '............'}</span>
+                      {' '}<span className="font-bold">วันที่</span> <span className="border-b border-slate-400">{formatThaiDate(formData.startDate)}</span>
+                    </p>
 
                     {/* Purpose */}
-                    <p className="mb-2">มีความประสงค์ขอยืมเงินจาก มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี เพื่อใช้ในกิจกรรมของส่วนงาน ดังนี้</p>
+                    <p className="mb-1">มีความประสงค์ขอยืมเงินจาก มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี เพื่อใช้ในกิจกรรมของส่วนงาน ดังนี้</p>
 
-                    {/* Activities Table */}
-                    <table className="w-full border-collapse border border-slate-400 text-[10px] mb-2">
-                      <thead>
-                        <tr className="bg-amber-100">
-                          <th className="border border-slate-400 px-2 py-1 text-left">ชื่อกิจกรรม</th>
-                          <th className="border border-slate-400 px-2 py-1 text-right w-28">จำนวนเงินรวม บาท</th>
-                          <th className="border border-slate-400 px-2 py-1 text-center w-16">สหกรณ์</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {formData.activities.map((act, idx) => (
-                          <tr key={idx}>
-                            <td className="border border-slate-400 px-2 py-1">{act.name || '.....................'}</td>
-                            <td className="border border-slate-400 px-2 py-1 text-right">{act.amount ? parseFloat(act.amount).toLocaleString() : ''}</td>
-                            <td className="border border-slate-400 px-2 py-1 text-center"></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {/* Project */}
-                    <p className="mb-1"><span className="font-bold">ภายใต้โครงการ</span></p>
-                    <p className="text-[9px] text-slate-500 mb-2">** ระบุระยะเวลาดำเนินงาน และวันที่ขอรับเงิน</p>
-
-                    {/* Document Type Section - Yellow Background */}
-                    <div className="bg-amber-100 border border-amber-300 p-2 mb-2 text-[10px]">
-                      <p className="font-bold mb-1">ตัวอักษร ตัวเลขระบุจำนวนเงิน</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                        <p>○ เงินยืมอุดหนุนโครงการ บันทึกรับจ่ายเงิน หน่วยงาน (FD01)...........................รหัสหน่วยงาน (FD01)...........................</p>
-                        <p></p>
-                        <p>○ แผนงาน (FD02)...........................รหัสแผนงาน</p>
-                        <p></p>
-                        <p>○ แหล่งเงิน (FD05)...........................รหัสแหล่งเงิน</p>
-                        <p></p>
+                    {/* Reason/Purpose - Single paragraph */}
+                    <div className="mb-1 pl-2 border border-slate-200 p-1">
+                      <p className="text-[8px]">{formData.purpose || 'ค่าใช้จ่ายเดินทางไป "........................................"'}</p>
+                      <div className="flex justify-end mt-0.5">
+                        <span className="font-bold text-right">{totalAmount ? totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) : ''}</span>
                       </div>
                     </div>
 
-                    {/* Amount Summary */}
-                    <div className="bg-amber-100 border border-amber-300 p-2 mb-2 text-[10px] flex justify-between">
-                      <p><span className="font-bold">บาท</span> จำนวนเงินรวม........<span className="font-bold text-blue-600">{totalAmount.toLocaleString()}</span>........บาท</p>
+                    {/* Amount in Thai Text */}
+                    <div className="flex justify-between items-center mb-1 bg-slate-50 px-2 py-0.5">
+                      <p><span className="font-bold">(ตัวอักษร)</span> {numberToThaiText(totalAmount)}</p>
+                      <p><span className="font-bold">บาท</span> <span className="font-bold text-blue-600">{totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></p>
                     </div>
 
-                    {/* Receipt & Declaration */}
-                    <p className="text-[10px] mb-2">ตามใบเสร็จรับเงินเลขที่.............เล่มที่.............</p>
-                    
-                    <p className="text-[10px] mb-2">
+                    {/* Budget Source Section - matching PDF layout */}
+                    <div className="border border-slate-400 p-1.5 mb-1 text-[8px]">
+                      {/* Row 1: หน่วยงาน */}
+                      <div className="flex items-baseline mb-0.5">
+                        <span className="font-bold shrink-0">เงินยืมฉบับนี้เบิกจ่ายจาก</span>
+                        <span className="shrink-0 ml-2">หน่วยงาน (FD01)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1 text-center">{formData.department || 'สถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ'}</span>
+                        <span className="shrink-0">รหัสหน่วยงาน(FD01)</span>
+                        <span className="border-b border-slate-400 w-24 ml-1 text-center">{formData.fdNumber || ''}</span>
+                      </div>
+                      
+                      {/* Row 2: แผนงาน */}
+                      <div className="flex items-baseline mb-0.5">
+                        <span className="shrink-0">○ แผนงาน (FD02)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1">{formData.planName || 'งานวิจัยโครงการ'}</span>
+                        <span className="shrink-0">รหัสแผนงาน</span>
+                        <span className="border-b border-slate-400 w-20 ml-1 text-center">{formData.planCode || ''}</span>
+                      </div>
+                      
+                      {/* Row 3: แหล่งเงิน */}
+                      <div className="flex items-baseline mb-0.5">
+                        <span className="shrink-0">○ แหล่งเงิน (FD05)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1">{formData.fundName || 'รายรับจากงานวิจัยและวิชาการ'}</span>
+                        <span className="shrink-0">รหัสแหล่งเงิน</span>
+                        <span className="border-b border-slate-400 w-12 ml-1 text-center">{formData.fundCode || ''}</span>
+                      </div>
+                      
+                      {/* Row 4: เรื่อง */}
+                      <div className="flex items-baseline mb-0.5">
+                        <span className="shrink-0">เรื่อง</span>
+                        <span className="border-b border-slate-400 flex-1 ml-1">{formData.documentSubject || ''}</span>
+                      </div>
+                      
+                      {/* Row 5: ตามใบเสร็จรับเงิน */}
+                      <div className="flex items-baseline">
+                        <span className="shrink-0">ตามใบเสร็จรับเงินเลขที่</span>
+                        <span className="border-b border-slate-400 w-20 mx-1 text-center">{formData.receiptNumber || ''}</span>
+                        <span className="shrink-0">เล่มที่</span>
+                        <span className="border-b border-slate-400 w-16 mx-1 text-center">{formData.receiptBook || ''}</span>
+                        <span className="shrink-0">วันที่</span>
+                        <span className="border-b border-slate-400 flex-1 ml-1 text-center">{formatThaiDate(formData.returnDate)}</span>
+                      </div>
+                    </div>
+
+                    {/* Terms */}
+                    <p className="text-[8px] mb-0.5">
                       เมื่อข้าพเจ้าได้รับเงินยืมตามสัญญานี้แล้ว ข้าพเจ้าจะเร่งดำเนินการตามวัตถุประสงค์ และจะจัดรับส่งหนังสือพร้อมยอดส่งคืนเงินสดส่วนที่เหลือ (ถ้ามี)
                     </p>
-                    <p className="text-[10px] mb-2">ภายใน..........วัน (โปรดระบุเกณฑ์ที่ใช้ในการกำหนด)</p>
-                    
-                    <p className="text-[9px] text-slate-600 mb-3">
-                      กรณีเป็นการยืมเงินตามหลักเกณฑ์เงินยืมโดยให้หน่วยงานเป็นผู้กำหนดการเงินปฏิบัติตามหลักเกณฑ์ ตามประกาศมหาวิทยาลัยฯ<br/>
-                      เรื่อง การยืมเงินมหาวิทยาลัย พ.ศ.2551 ตามหมวดที่ 5
+                    <p className="text-[8px] mb-0.5">ภายใน <span className="border-b border-slate-400 px-1">{formData.operationDays || '......'}</span> วัน (โปรดดูหลักเกณฑ์ที่กำไปด้านหลัง)</p>
+                    <p className="text-[7px] text-slate-500 mb-1">
+                      กรณีไม่ดำเนินการตามเงื่อนไขที่กำหนด ข้าพเจ้ายอมให้มหาวิทยาลัยหักเงินเดือนตามข้อกำหนดการไม่ปฏิบัติตามเงื่อนไขตามประกาศมหาวิทยาลัย เรื่อง การยืมเงินมหาวิทยาลัย พ.ศ.2551 ตามนัยข้อ 5
                     </p>
 
-                    {/* Approval Section - 3 Columns */}
-                    <table className="w-full border-collapse border border-slate-400 text-[9px] mb-3">
+                    {/* 4-Column Approval Signatures - matching PDF */}
+                    <table className="w-full border-collapse border border-slate-400 text-[7px] mb-1">
                       <thead>
-                        <tr className="bg-amber-100">
-                          <th className="border border-slate-400 px-2 py-1 text-center">เห็นสมควรอนุมัติ</th>
-                          <th className="border border-slate-400 px-2 py-1 text-center">อนุมัติ/เห็นสมควรอนุมัติ</th>
-                          <th className="border border-slate-400 px-2 py-1 text-center">อนุมัติ</th>
+                        <tr>
+                          <th className="border border-slate-400 px-1 py-0.5 text-center font-normal w-1/4"></th>
+                          <th className="border border-slate-400 px-1 py-0.5 text-center font-bold w-1/4">เห็นสมควรอนุมัติ</th>
+                          <th className="border border-slate-400 px-1 py-0.5 text-center font-bold w-1/4">อนุมัติ/เห็นสมควรอนุมัติ</th>
+                          <th className="border border-slate-400 px-1 py-0.5 text-center font-bold w-1/4">อนุมัติ</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="border border-slate-400 px-2 py-3 text-center align-top">
-                            <p>ลงชื่อ...E-sign... ผู้ยืมเงิน</p>
-                            <p className="text-slate-500">(ลายเซ็น ช. มจธ.ศปรศ.)</p>
-                            <p>วันที่...วันที่เสนอขอยืม e-sign</p>
+                          <td className="border border-slate-400 px-1 py-1 align-top text-center">
+                            <p className="mb-1">ลงชื่อ .................................. ผู้ยืมเงิน</p>
+                            <p className="mb-1">( {formData.borrowerTitle} {formData.borrowerFirstName} {formData.borrowerLastName || '..............................'} )</p>
+                            <p className="text-left">วันที่</p>
                           </td>
-                          <td className="border border-slate-400 px-2 py-3 text-center align-top">
-                            <p>ลงชื่อ...E-sign (ผอ.ศูนย์)...</p>
-                            <p className="text-slate-500">(ช. บุญจราศ ผอส ผสส และ สกส)</p>
-                            <p>วันที่...วันที่เสนอขอยืม e-sign...</p>
+                          <td className="border border-slate-400 px-1 py-1 align-top text-center">
+                            <p className="mb-1">ลงชื่อ ..................................</p>
+                            <p className="mb-1">( .......................................... )</p>
+                            <p className="text-left">วันที่</p>
                           </td>
-                          <td className="border border-slate-400 px-2 py-3 text-center align-top">
-                            <p>ลงชื่อ...Sign ผอ.สรบ....</p>
-                            <p className="text-slate-500">(...สำเนาถูก ช. มจศศก. ของ สรบ....)</p>
-                            <p>วันที่...วันที่อนุมัติขอยืม(สกเอง)...</p>
+                          <td className="border border-slate-400 px-1 py-1 align-top text-center">
+                            <p className="mb-1">ลงชื่อ ..................................</p>
+                            <p className="mb-1">( นายศุเรนทร์ ฐปนางกูร )</p>
+                            <p className="text-left">วันที่</p>
+                          </td>
+                          <td className="border border-slate-400 px-1 py-1 align-top text-center">
+                            <p className="mb-1">ลงชื่อ</p>
+                            <p className="mb-1">( ผศ.ดร.บุณยพัต สุภานิช )</p>
+                            <p className="text-left">วันที่</p>
                           </td>
                         </tr>
                       </tbody>
                     </table>
 
-                    {/* Proxy Section */}
-                    <div className="border border-slate-400 p-2 mb-3 text-[10px]">
-                      <p className="font-bold text-center mb-2">การมอบฉันทะ</p>
-                      <p>(กรณีผู้ยืมเงินไม่สามารถมารับเงินได้ จึงมอบให้ นาย/นาง/นางสาว)</p>
-                      <p className="mt-2">ลงชื่อ.........................................ผู้มอบฉันทะ ลงชื่อ.........................................ผู้รับมอบฉันทะ</p>
-                      <p>วันที่.............(...........................)............... วันที่.............(...........................)...............</p>
-                    </div>
-
-                    {/* Treasury Section */}
-                    <div className="border-t-2 border-slate-600 pt-2 mb-3">
-                      <p className="font-bold text-center mb-2">ส่วนของกองคลัง</p>
-                      <div className="flex gap-4 text-[10px] mb-2">
-                        <p>○ จ่ายได้ตามที่อนุมัติแล้วข้างต้น</p>
-                        <p>○ สัญญายืมเงินซ้ำจ่ายด้วย</p>
-                        <p>สัญญายืมเลขที่...............................</p>
-                      </div>
-                      <div className="flex gap-4 text-[10px]">
-                        <p>○ เงินสด</p>
-                        <p>○ เช็คเลขที่</p>
-                        <p>ลงวันที่...............................</p>
+                    {/* Proxy Section - matching PDF */}
+                    <div className="border border-slate-400 p-1 mb-1 text-[8px]">
+                      <p className="font-bold text-center mb-0.5">การมอบฉันทะ (กรณีผู้ยืมเงินไม่สามารถมารับเงินด้วยตนเอง)</p>
+                      <p>ข้าพเจ้าไม่สามารถมารับเงินยืมได้ จึงมอบให้ {formData.proxyTitle || 'นาย/นาง/นางสาว'} <span className="border-b border-slate-400">{formData.proxyName || '........................'}</span> เป็นผู้มารับเงินตัดกล่าวแทนข้าพเจ้า</p>
+                      <div className="flex justify-between mt-1 text-[7px]">
+                        <div className="text-center">
+                          <p>ลงชื่อ..........................ผู้มอบฉันทะ</p>
+                          <p>(...............................)</p>
+                          <p>วันที่...........................</p>
+                        </div>
+                        <div className="text-center">
+                          <p>ลงชื่อ..........................ผู้รับมอบฉันทะ</p>
+                          <p>(...............................)</p>
+                          <p>วันที่...........................</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Treasury Signatures */}
-                    <div className="grid grid-cols-3 gap-2 text-center text-[9px] mb-3">
-                      <div>
-                        <p>ลงชื่อ........................</p>
-                        <p className="font-bold">ผู้อำนวยการกองคลัง</p>
-                        <p>วันที่</p>
+                    {/* Treasury Section - matching PDF exactly */}
+                    <div className="border-t-2 border-slate-600 pt-1 mb-1">
+                      {/* Header */}
+                      <div className="bg-slate-200 text-center py-0.5 border border-slate-400 mb-0">
+                        <p className="font-bold text-[8px]">ส่วนของกองคลัง</p>
                       </div>
-                      <div>
-                        <p>ลงชื่อ........................</p>
-                        <p className="font-bold">ผู้จัดทำเช็ค</p>
-                        <p>วันที่</p>
+                      
+                      {/* First Row - Payment Info */}
+                      <div className="border border-slate-400 border-t-0 text-[7px]">
+                        <div className="flex">
+                          <div className="w-[30%] p-1 border-r border-slate-400">
+                            <p>จ่ายได้ตามที่อนุมัติแล้วข้างต้น</p>
+                          </div>
+                          <div className="w-[45%] p-1 border-r border-slate-400">
+                            <p>สัญญาเงินยืมข้างต้นจ่ายด้วย</p>
+                            <div className="flex gap-3 mt-0.5">
+                              <span>○ เงินสด</span>
+                              <span>○ เช็คเลขที่ .........................</span>
+                            </div>
+                          </div>
+                          <div className="w-[25%] p-1">
+                            <p>สัญญาเลขที่ ........../........</p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p>ลงชื่อ........................</p>
-                        <p className="font-bold">ผู้ตรวจ</p>
-                        <p></p>
+
+                      {/* Second Row - Signatures */}
+                      <div className="border border-slate-400 border-t-0 text-[7px]">
+                        <div className="flex">
+                          {/* Left - ผู้อำนวยการกองคลัง */}
+                          <div className="w-[30%] p-1 border-r border-slate-400">
+                            <p>ลงชื่อ ................................</p>
+                            <p className="text-center">ผู้อำนวยการกองคลัง</p>
+                            <p>วันที่ ................................</p>
+                          </div>
+                          {/* Middle - ธนาคาร + ผู้จัดทำเช็ค */}
+                          <div className="w-[45%] p-1 border-r border-slate-400">
+                            <p>ธนาคาร ............................................................. ลงวันที่ ........................</p>
+                            <p>ลงชื่อ ............................................................. ผู้จัดทำเช็ค</p>
+                            <p>วันที่ ................................</p>
+                          </div>
+                          {/* Right - ผู้ตรวจ */}
+                          <div className="w-[25%] p-1">
+                            <p>ลงชื่อ ................................</p>
+                            <p className="text-center">ผู้ตรวจ</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Receiver Confirmation */}
-                    <div className="border-t border-slate-400 pt-2 mb-2 text-[10px]">
-                      <p className="font-bold">ข้าพเจ้าได้รับเงินยืมจำนวน...........<span className="text-blue-600">{totalAmount.toLocaleString()}</span>...........บาท</p>
-                      <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="border border-slate-400 p-1 text-[8px] mb-1">
+                      <p className="mb-1">ข้าพเจ้าได้รับเงินยืมจำนวน <span className="border-b border-slate-400 px-4">{totalAmount.toLocaleString()}</span> บาท ( <span className="border-b border-slate-400 px-2">{numberToThaiText(totalAmount)}</span> )</p>
+                      <div className="grid grid-cols-2 gap-6 text-[7px] mt-2">
                         <div className="text-center">
-                          <p>ลงชื่อ........................</p>
-                          <p>ผู้รับเงิน</p>
-                          <p>วันที่</p>
+                          <p>ลงชื่อ .......................................... ผู้รับเงิน</p>
+                          <p>( .......................................... )</p>
+                          <p>วันที่ ........................................</p>
                         </div>
                         <div className="text-center">
-                          <p>ลงชื่อ........................</p>
-                          <p>ผู้จ่ายเงิน</p>
-                          <p>วันที่</p>
+                          <p>ลงชื่อ .......................................... ผู้จ่ายเงิน</p>
+                          <p>( .......................................... )</p>
+                          <p>วันที่ ........................................</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="border-t border-slate-400 pt-2 text-[9px]">
-                      <p>ลงชื่อ........................ผู้บันทึกบัญชี วันที่........................</p>
-                      <p className="text-right text-slate-500 mt-1">พลิกด้านหลัง</p>
+                    <div className="border border-slate-400 border-t-0">
+                      <div className="flex justify-between items-center p-1 text-[7px]">
+                        <p>ลงชื่อ ............................ ผู้บันทึกบัญชี วันที่ ............................</p>
+                        <div className="text-right">
+                          <p>พลิกด้านหลัง</p>
+                        </div>
+                      </div>
+                      <div className="text-right pr-1 pb-0.5">
+                        <p className="text-[7px] text-slate-500">ฉบับปรับปรุงเริ่มใช้ 1 ต.ค. 2565</p>
+                      </div>
                     </div>
 
                   </div>
                 </div>
               </div>
               </div>
+              </div>
               
               {/* Preview Info */}
-              <p className="text-xs text-slate-400 mt-3 text-center">
+              <p className="text-xs text-slate-400 mt-3 text-center shrink-0">
                 * ตัวอย่างเอกสารจะอัพเดทตามข้อมูลที่กรอก
               </p>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Preview Modal */}
+      {isFullscreenPreview && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-100 rounded-xl w-full max-w-5xl max-h-[95vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="font-bold text-slate-700">
+                <i className="fa-solid fa-eye mr-2"></i>
+                ตัวอย่างเอกสาร FO-TO-04 - สัญญายืมเงิน
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFullscreenPreview(false)}
+                className="w-10 h-10 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                title="ปิด"
+              >
+                <i className="fa-solid fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex justify-center">
+                {/* A4 Document Preview - Same as normal preview but larger */}
+                <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[700px]">
+                  <div className="p-6 text-[11px] leading-relaxed font-sarabun">
+                    
+                    {/* Header - PDTI Style matching PDF */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src="https://www.kmutt.ac.th/wp-content/uploads/2020/09/KMUTT_CI_Primary_Logo-Full.png" 
+                          alt="PDTI Logo" 
+                          className="w-14 h-14 object-contain"
+                        />
+                        <div>
+                          <p className="font-bold text-[12px]">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
+                          <p className="font-bold text-[14px]">สัญญาการยืมเงิน</p>
+                        </div>
+                      </div>
+                      <div className="text-right text-[10px]">
+                        <div className="border border-slate-500 px-3 py-1 font-bold text-[11px] inline-block mb-1">FO-TO-04</div>
+                        <p className="font-bold">กองคลัง</p>
+                      </div>
+                    </div>
+
+                    {/* To Line with Document Number */}
+                    <div className="flex justify-between items-center border-b border-slate-300 pb-2 mb-2">
+                      <p><span className="font-bold">เรียน</span> {formData.toDirector || 'ผู้อำนวยการสถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ'}</p>
+                      <p>เลขที่รับ <span className="border-b border-slate-400 px-3">{formData.documentNumber || '............'}</span></p>
+                    </div>
+
+                    {/* Borrower Info - Single line like PDF */}
+                    <p className="mb-1">
+                      <span className="font-bold">ข้าพเจ้า</span> <span className="border-b border-slate-400">{formData.borrowerTitle} {formData.borrowerFirstName} {formData.borrowerLastName || '...................'}</span>
+                      {' '}<span className="font-bold">ตำแหน่ง</span> <span className="border-b border-slate-400">{formData.position || '............'}</span>
+                      {' '}<span className="font-bold">คณะ/สำนัก/กอง (FD01)</span> <span className="border-b border-slate-400">{formData.department || '...................'}</span>
+                    </p>
+                    <p className="mb-2">
+                      <span className="font-bold">ภาควิชา/สายวิชา/หน่วยงาน (FD01)</span> <span className="border-b border-slate-400">{formData.faculty || '............'}</span>
+                      {' '}<span className="font-bold">วันที่</span> <span className="border-b border-slate-400">{formatThaiDate(formData.startDate)}</span>
+                    </p>
+
+                    {/* Purpose */}
+                    <p className="mb-2">มีความประสงค์ขอยืมเงินจาก มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี เพื่อใช้ในกิจกรรมของส่วนงาน ดังนี้</p>
+
+                    {/* Reason/Purpose - Single paragraph */}
+                    <div className="mb-2 pl-2 border border-slate-200 p-2 rounded">
+                      <p className="text-[10px]">{formData.purpose || 'ค่าใช้จ่ายเดินทางไป "........................................"'}</p>
+                      <div className="flex justify-end mt-1">
+                        <span className="font-bold text-right">{totalAmount ? totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) : ''}</span>
+                      </div>
+                    </div>
+
+                    {/* Amount in Thai Text */}
+                    <div className="flex justify-between items-center mb-2 bg-slate-50 px-3 py-1 rounded">
+                      <p><span className="font-bold">(ตัวอักษร)</span> {numberToThaiText(totalAmount)}</p>
+                      <p><span className="font-bold">บาท</span> <span className="font-bold text-blue-600">{totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></p>
+                    </div>
+
+                    {/* Budget Source Section - matching PDF layout */}
+                    <div className="border border-slate-400 p-2 mb-2 text-[10px] rounded">
+                      {/* Row 1: หน่วยงาน */}
+                      <div className="flex items-baseline mb-1">
+                        <span className="font-bold shrink-0">เงินยืมฉบับนี้เบิกจ่ายจาก</span>
+                        <span className="shrink-0 ml-2">หน่วยงาน (FD01)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1 text-center">{formData.department || 'สถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ'}</span>
+                        <span className="shrink-0">รหัสหน่วยงาน(FD01)</span>
+                        <span className="border-b border-slate-400 w-28 ml-1 text-center">{formData.fdNumber || ''}</span>
+                      </div>
+                      
+                      {/* Row 2: แผนงาน */}
+                      <div className="flex items-baseline mb-1">
+                        <span className="shrink-0">○ แผนงาน (FD02)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1">{formData.planName || 'งานวิจัยโครงการ'}</span>
+                        <span className="shrink-0">รหัสแผนงาน</span>
+                        <span className="border-b border-slate-400 w-24 ml-1 text-center">{formData.planCode || ''}</span>
+                      </div>
+                      
+                      {/* Row 3: แหล่งเงิน */}
+                      <div className="flex items-baseline mb-1">
+                        <span className="shrink-0">○ แหล่งเงิน (FD05)</span>
+                        <span className="border-b border-slate-400 flex-1 mx-1">{formData.fundName || 'รายรับจากงานวิจัยและวิชาการ'}</span>
+                        <span className="shrink-0">รหัสแหล่งเงิน</span>
+                        <span className="border-b border-slate-400 w-16 ml-1 text-center">{formData.fundCode || ''}</span>
+                      </div>
+                      
+                      {/* Row 4: เรื่อง */}
+                      <div className="flex items-baseline mb-1">
+                        <span className="shrink-0">เรื่อง</span>
+                        <span className="border-b border-slate-400 flex-1 ml-1">{formData.documentSubject || ''}</span>
+                      </div>
+                      
+                      {/* Row 5: ตามใบเสร็จรับเงิน */}
+                      <div className="flex items-baseline">
+                        <span className="shrink-0">ตามใบเสร็จรับเงินเลขที่</span>
+                        <span className="border-b border-slate-400 w-24 mx-1 text-center">{formData.receiptNumber || ''}</span>
+                        <span className="shrink-0">เล่มที่</span>
+                        <span className="border-b border-slate-400 w-20 mx-1 text-center">{formData.receiptBook || ''}</span>
+                        <span className="shrink-0">วันที่</span>
+                        <span className="border-b border-slate-400 flex-1 ml-1 text-center">{formatThaiDate(formData.returnDate)}</span>
+                      </div>
+                    </div>
+
+                    {/* Terms */}
+                    <p className="text-[10px] mb-1">
+                      เมื่อข้าพเจ้าได้รับเงินยืมตามสัญญานี้แล้ว ข้าพเจ้าจะเร่งดำเนินการตามวัตถุประสงค์ และจะจัดรับส่งหนังสือพร้อมยอดส่งคืนเงินสดส่วนที่เหลือ (ถ้ามี)
+                    </p>
+                    <p className="text-[10px] mb-1">ภายใน <span className="border-b border-slate-400 px-2">{formData.operationDays || '......'}</span> วัน (โปรดดูหลักเกณฑ์ที่กำหนดไว้ด้านหลัง)</p>
+                    <p className="text-[9px] text-slate-500 mb-2">
+                      กรณีไม่ดำเนินการตามเงื่อนไขที่กำหนด ข้าพเจ้ายอมให้มหาวิทยาลัยหักเงินเดือนตามข้อกำหนดการไม่ปฏิบัติตามเงื่อนไขตามประกาศมหาวิทยาลัย เรื่อง การยืมเงินมหาวิทยาลัย พ.ศ.2551 ตามนัยข้อ 5
+                    </p>
+
+                    {/* 4-Column Approval Signatures - matching PDF */}
+                    <table className="w-full border-collapse border border-slate-400 text-[9px] mb-2">
+                      <thead>
+                        <tr>
+                          <th className="border border-slate-400 px-2 py-1 text-center font-normal w-1/4"></th>
+                          <th className="border border-slate-400 px-2 py-1 text-center font-bold w-1/4">เห็นสมควรอนุมัติ</th>
+                          <th className="border border-slate-400 px-2 py-1 text-center font-bold w-1/4">อนุมัติ/เห็นสมควรอนุมัติ</th>
+                          <th className="border border-slate-400 px-2 py-1 text-center font-bold w-1/4">อนุมัติ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-slate-400 px-2 py-2 align-top text-center">
+                            <p className="mb-2">ลงชื่อ .................................. ผู้ยืมเงิน</p>
+                            <p className="mb-2">( {formData.borrowerTitle} {formData.borrowerFirstName} {formData.borrowerLastName || '..............................'} )</p>
+                            <p className="text-left">วันที่</p>
+                          </td>
+                          <td className="border border-slate-400 px-2 py-2 align-top text-center">
+                            <p className="mb-2">ลงชื่อ ..................................</p>
+                            <p className="mb-2">( .......................................... )</p>
+                            <p className="text-left">วันที่</p>
+                          </td>
+                          <td className="border border-slate-400 px-2 py-2 align-top text-center">
+                            <p className="mb-2">ลงชื่อ ..................................</p>
+                            <p className="mb-2">( นายศุเรนทร์ ฐปนางกูร )</p>
+                            <p className="text-left">วันที่</p>
+                          </td>
+                          <td className="border border-slate-400 px-2 py-2 align-top text-center">
+                            <p className="mb-2">ลงชื่อ</p>
+                            <p className="mb-2">( ผศ.ดร.บุณยพัต สุภานิช )</p>
+                            <p className="text-left">วันที่</p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* Proxy Section - matching PDF */}
+                    <div className="border border-slate-400 p-2 mb-2 text-[10px] rounded">
+                      <p className="font-bold text-center mb-1">การมอบฉันทะ (กรณีผู้ยืมเงินไม่สามารถมารับเงินด้วยตนเอง)</p>
+                      <p>ข้าพเจ้าไม่สามารถมารับเงินยืมได้ จึงมอบให้ {formData.proxyTitle || 'นาย/นาง/นางสาว'} <span className="border-b border-slate-400">{formData.proxyName || '........................'}</span> เป็นผู้มารับเงินตัดกล่าวแทนข้าพเจ้า</p>
+                      <div className="flex justify-between mt-2 text-[9px]">
+                        <div className="text-center">
+                          <p>ลงชื่อ..........................ผู้มอบฉันทะ</p>
+                          <p>(...............................)</p>
+                          <p>วันที่...........................</p>
+                        </div>
+                        <div className="text-center">
+                          <p>ลงชื่อ..........................ผู้รับมอบฉันทะ</p>
+                          <p>(...............................)</p>
+                          <p>วันที่...........................</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Treasury Section - matching PDF exactly */}
+                    <div className="border-t-2 border-slate-600 pt-2 mb-2">
+                      {/* Header */}
+                      <div className="bg-slate-200 text-center py-1 border border-slate-400 mb-0">
+                        <p className="font-bold text-[10px]">ส่วนของกองคลัง</p>
+                      </div>
+                      
+                      {/* First Row - Payment Info */}
+                      <div className="border border-slate-400 border-t-0 text-[9px]">
+                        <div className="flex">
+                          <div className="w-[30%] p-2 border-r border-slate-400">
+                            <p>จ่ายได้ตามที่อนุมัติแล้วข้างต้น</p>
+                          </div>
+                          <div className="w-[45%] p-2 border-r border-slate-400">
+                            <p>สัญญาเงินยืมข้างต้นจ่ายด้วย</p>
+                            <div className="flex gap-4 mt-1">
+                              <span>○ เงินสด</span>
+                              <span>○ เช็คเลขที่ .........................</span>
+                            </div>
+                          </div>
+                          <div className="w-[25%] p-2">
+                            <p>สัญญาเลขที่ ........../........</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Second Row - Signatures */}
+                      <div className="border border-slate-400 border-t-0 text-[9px]">
+                        <div className="flex">
+                          {/* Left - ผู้อำนวยการกองคลัง */}
+                          <div className="w-[30%] p-2 border-r border-slate-400">
+                            <p>ลงชื่อ ........................................</p>
+                            <p className="text-center">ผู้อำนวยการกองคลัง</p>
+                            <p>วันที่ ........................................</p>
+                          </div>
+                          {/* Middle - ธนาคาร + ผู้จัดทำเช็ค */}
+                          <div className="w-[45%] p-2 border-r border-slate-400">
+                            <p>ธนาคาร ................................................................. ลงวันที่ ............................</p>
+                            <p>ลงชื่อ ................................................................. ผู้จัดทำเช็ค</p>
+                            <p>วันที่ ........................................</p>
+                          </div>
+                          {/* Right - ผู้ตรวจ */}
+                          <div className="w-[25%] p-2">
+                            <p>ลงชื่อ ........................................</p>
+                            <p className="text-center">ผู้ตรวจ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Receiver Confirmation */}
+                    <div className="border border-slate-400 p-2 text-[10px] mb-2">
+                      <p className="mb-2">ข้าพเจ้าได้รับเงินยืมจำนวน <span className="border-b border-slate-400 px-4">{totalAmount.toLocaleString()}</span> บาท ( <span className="border-b border-slate-400 px-2">{numberToThaiText(totalAmount)}</span> )</p>
+                      <div className="grid grid-cols-2 gap-8 text-[9px] mt-2">
+                        <div className="text-center">
+                          <p>ลงชื่อ .......................................... ผู้รับเงิน</p>
+                          <p>( .......................................... )</p>
+                          <p>วันที่ ........................................</p>
+                        </div>
+                        <div className="text-center">
+                          <p>ลงชื่อ .......................................... ผู้จ่ายเงิน</p>
+                          <p>( .......................................... )</p>
+                          <p>วันที่ ........................................</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="border border-slate-400">
+                      <div className="flex justify-between items-center p-2 text-[9px]">
+                        <p>ลงชื่อ ............................ ผู้บันทึกบัญชี วันที่ ............................</p>
+                        <div className="text-right">
+                          <p>พลิกด้านหลัง</p>
+                        </div>
+                      </div>
+                      <div className="text-right pr-2 pb-1">
+                        <p className="text-[8px] text-slate-500">ฉบับปรับปรุงเริ่มใช้ 1 ต.ค. 2565</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3">
+              <Button 
+                variant="secondary" 
+                onClick={() => setIsFullscreenPreview(false)}
+              >
+                <i className="fa-solid fa-times mr-2"></i>
+                ปิด
+              </Button>
+              <Button variant="primary">
+                <i className="fa-solid fa-print mr-2"></i>
+                พิมพ์
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

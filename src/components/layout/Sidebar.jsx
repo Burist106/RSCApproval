@@ -64,7 +64,7 @@ export default function Sidebar({ user, onLogout }) {
 
   return (
     <aside className={`
-      ${isCollapsed ? 'w-20' : 'w-72'} 
+      ${isCollapsed ? 'w-20' : 'w-64'} 
       bg-white border-r border-slate-200 flex flex-col
       transition-all duration-300 ease-in-out shrink-0
     `}>

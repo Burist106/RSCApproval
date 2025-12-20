@@ -16,11 +16,11 @@ const researcherBudget = {
 }
 
 const researcherRequests = [
-  { id: 'BD-089', type: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'ดร.สมชาย ใจดี' },
-  { id: 'BD-088', type: 'ยืมเงิน', title: 'ค่าเดินทางประชุมวิชาการ', status: 'pending', date: '2025-11-30', amount: 12000, requester: 'ดร.สมชาย ใจดี' },
-  { id: 'BD-087', type: 'ขอใช้รถยนต์', title: 'เดินทางไปพื้นที่โครงการหลวง', status: 'approved', date: '2025-11-28', amount: null, requester: 'ดร.สมชาย ใจดี' },
-  { id: 'BD-086', type: 'เดินทางราชการ', title: 'ประชุมวิชาการ ณ กรุงเทพฯ', status: 'approved', date: '2025-11-25', amount: 8500, requester: 'ดร.สมชาย ใจดี' },
-  { id: 'BD-085', type: 'ยืมเงิน', title: 'ค่าวัสดุทดลอง', status: 'rejected', date: '2025-11-24', amount: 5000, requester: 'ดร.สมชาย ใจดี' },
+  { id: 'BD-089', type: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'สมชาย ใจดี' },
+  { id: 'BD-088', type: 'ยืมเงิน', title: 'ค่าเดินทางประชุมวิชาการ', status: 'pending', date: '2025-11-30', amount: 12000, requester: 'สมชาย ใจดี' },
+  { id: 'BD-087', type: 'ขอใช้รถยนต์', title: 'เดินทางไปพื้นที่โครงการหลวง', status: 'approved', date: '2025-11-28', amount: null, requester: 'สมชาย ใจดี' },
+  { id: 'BD-086', type: 'เดินทางราชการ', title: 'ประชุมวิชาการ ณ กรุงเทพฯ', status: 'approved', date: '2025-11-25', amount: 8500, requester: 'สมชาย ใจดี' },
+  { id: 'BD-085', type: 'ยืมเงิน', title: 'ค่าวัสดุทดลอง', status: 'rejected', date: '2025-11-24', amount: 5000, requester: 'สมชาย ใจดี' },
 ]
 
 // ============ ข้อมูลสำหรับ Admin ============
@@ -28,7 +28,7 @@ const adminRequests = [
   { id: 'BD-095', type: 'ขออนุมัติโครงการ', title: 'โครงการพัฒนา Smart Farm', status: 'reviewing', date: '2025-12-02', amount: 250000, requester: 'ดร.วิชัย นักวิจัย' },
   { id: 'BD-094', type: 'ยืมเงิน', title: 'ค่าอุปกรณ์ IoT', status: 'reviewing', date: '2025-12-01', amount: 35000, requester: 'ดร.สมศรี ทดสอบ' },
   { id: 'BD-093', type: 'เดินทางราชการ', title: 'ประชุมที่ต่างประเทศ', status: 'reviewing', date: '2025-11-30', amount: 85000, requester: 'ดร.มานะ พากเพียร' },
-  { id: 'BD-092', type: 'ขอใช้รถยนต์', title: 'ไปสำรวจพื้นที่', status: 'reviewing', date: '2025-11-29', amount: null, requester: 'ดร.สมชาย ใจดี' },
+  { id: 'BD-092', type: 'ขอใช้รถยนต์', title: 'ไปสำรวจพื้นที่', status: 'reviewing', date: '2025-11-29', amount: null, requester: 'สมชาย ใจดี' },
   { id: 'BD-091', type: 'ยืมเงิน', title: 'ค่าจ้างผู้ช่วยวิจัย', status: 'need-revision', date: '2025-11-28', amount: 15000, requester: 'ดร.วิชัย นักวิจัย' },
   { id: 'BD-090', type: 'ขออนุมัติโครงการ', title: 'โครงการวิจัยน้ำ', status: 'need-revision', date: '2025-11-27', amount: 180000, requester: 'ดร.สมศรี ทดสอบ' },
 ]
@@ -53,8 +53,8 @@ const directorRequests = [
   { id: 'BD-095', type: 'ขออนุมัติโครงการ', title: 'โครงการพัฒนา Smart Farm', status: 'pending', date: '2025-12-02', amount: 250000, requester: 'ดร.วิชัย นักวิจัย' },
   { id: 'BD-094', type: 'ยืมเงิน', title: 'ค่าอุปกรณ์ IoT', status: 'pending', date: '2025-12-01', amount: 35000, requester: 'ดร.สมศรี ทดสอบ' },
   { id: 'BD-093', type: 'เดินทางราชการ', title: 'ประชุมที่ต่างประเทศ', status: 'pending', date: '2025-11-30', amount: 85000, requester: 'ดร.มานะ พากเพียร' },
-  { id: 'BD-089', type: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'ดร.สมชาย ใจดี' },
-  { id: 'BD-088', type: 'ยืมเงิน', title: 'ค่าเดินทางประชุมวิชาการ', status: 'pending', date: '2025-11-30', amount: 12000, requester: 'ดร.สมชาย ใจดี' },
+  { id: 'BD-089', type: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'สมชาย ใจดี' },
+  { id: 'BD-088', type: 'ยืมเงิน', title: 'ค่าเดินทางประชุมวิชาการ', status: 'pending', date: '2025-11-30', amount: 12000, requester: 'สมชาย ใจดี' },
 ]
 
 // Colors for charts

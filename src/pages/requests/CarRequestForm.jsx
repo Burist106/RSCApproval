@@ -10,6 +10,7 @@ import {
   Divider,
   FileUpload,
 } from '../../components'
+import { getAccOptions, getFDByAcc, formatCurrency } from '../../data/fdCodes'
 
 /**
  * CarRequestForm
@@ -76,9 +77,16 @@ const getInitialFormData = (user) => ({
   reason: 'no_university_car',
   reasonOther: '',
   
-  // โครงการ
+  // ACC Selection (รหัสงบประมาณ)
+  selectedAcc: '',
+  documentSubject: '', // เรื่อง: ACC (รหัสโครงการ)
   projectName: '',
-  budgetSource: '',
+  fdNumber: '',
+  planCode: '',
+  planName: '',
+  fundCode: '',
+  fundName: '',
+  projectCode: '',
   
   // ค่าชดเชย
   fuelCompensation: 0,
@@ -96,6 +104,9 @@ export default function CarRequestForm({
 }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  
+  // Fullscreen preview state
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState(false)
   
   // Form state - merge initial data if provided
   const [formData, setFormData] = useState(() => {
@@ -196,9 +207,54 @@ export default function CarRequestForm({
     return num.toLocaleString() + ' บาท'
   }
 
+  // Get ACC options for dropdown
+  const accOptions = useMemo(() => {
+    return [
+      { value: '', label: '-- เลือกรหัสงบประมาณ (ACC) --' },
+      ...getAccOptions()
+    ]
+  }, [])
+
+  // Get selected FD data for display
+  const selectedFDData = useMemo(() => {
+    return getFDByAcc(formData.selectedAcc)
+  }, [formData.selectedAcc])
+
   // Handle field change
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Handle ACC selection - auto-fill related fields
+  const handleAccChange = (acc) => {
+    const fdData = getFDByAcc(acc)
+    if (fdData) {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        projectName: fdData.projectName,
+        documentSubject: acc, // แสดงแค่ ACC ไม่ต้องมีวงเล็บรหัสโครงการ
+        fdNumber: fdData.fdCode,
+        planCode: fdData.planCode,
+        planName: fdData.planName,
+        fundCode: fdData.fundCode,
+        fundName: fdData.fundName,
+        projectCode: fdData.projectCode,
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        projectName: '',
+        documentSubject: '',
+        fdNumber: '',
+        planCode: '',
+        planName: '',
+        fundCode: '',
+        fundName: '',
+        projectCode: '',
+      }))
+    }
   }
 
   // Handle submit
@@ -526,26 +582,68 @@ export default function CarRequestForm({
             </div>
           </Card>
 
-          {/* Section 6: โครงการและแหล่งงบประมาณ */}
+          {/* Section 6: เลือกรหัสงบประมาณ (ACC) */}
           <Card>
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
               <span className="w-7 h-7 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-sm">6</span>
-              โครงการและแหล่งงบประมาณ
+              รหัสงบประมาณ (ACC)
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium ml-auto">
+                <i className="fa-solid fa-magic mr-1"></i>
+                Auto-fill
+              </span>
             </h2>
             
             <div className="space-y-4">
-              <Input
-                label="ชื่อโครงการ (ถ้ามี)"
-                value={formData.projectName}
-                onChange={(e) => handleChange('projectName', e.target.value)}
-                placeholder="ระบุชื่อโครงการที่เกี่ยวข้อง"
+              {/* ACC Dropdown */}
+              <Select
+                label="เลือกรหัสงบประมาณ (ACC)"
+                options={accOptions}
+                value={formData.selectedAcc}
+                onChange={(e) => handleAccChange(e.target.value)}
+                required
               />
-              <Input
-                label="แหล่งงบประมาณ"
-                value={formData.budgetSource}
-                onChange={(e) => handleChange('budgetSource', e.target.value)}
-                placeholder="เช่น งบโครงการหลวง, งบมหาวิทยาลัย"
-              />
+
+              {/* Show selected ACC info */}
+              {selectedFDData && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <i className="fa-solid fa-circle-info text-blue-500"></i>
+                    <span className="font-semibold text-blue-800">ข้อมูลโครงการที่เลือก</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-slate-500">ACC:</span>
+                      <span className="ml-2 font-medium text-slate-800">{formData.selectedAcc}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">รหัสโครงการ:</span>
+                      <span className="ml-2 font-medium text-slate-800">{selectedFDData.projectCode}</span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="text-slate-500">ชื่อโครงการ:</span>
+                      <span className="ml-2 font-medium text-slate-800">{selectedFDData.projectName}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">งบประมาณ:</span>
+                      <span className="ml-2 font-semibold text-green-600">{formatCurrency(selectedFDData.budget)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">คงเหลือ:</span>
+                      <span className="ml-2 font-semibold text-blue-600">{formatCurrency(selectedFDData.budget - selectedFDData.spent)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Auto-filled project name (read-only) */}
+              {formData.projectName && (
+                <Input
+                  label="ชื่อโครงการ (กรอกอัตโนมัติ)"
+                  value={formData.projectName}
+                  disabled
+                  className="bg-slate-50"
+                />
+              )}
             </div>
           </Card>
 
@@ -582,25 +680,32 @@ export default function CarRequestForm({
         </div>
 
         {/* Preview Section */}
-        <div>
-          <div className="sticky top-4">
-            <Card className="bg-slate-100 border-none p-4">
-              <div className="flex items-center justify-between mb-3">
+        <div className="h-[calc(100vh-120px)]">
+          <div className="sticky top-4 h-full flex flex-col">
+            <Card className="bg-slate-100 border-none p-4 flex-1 flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   <i className="fa-solid fa-eye mr-2"></i>
                   ตัวอย่างเอกสาร
                 </h3>
-                <Button variant="ghost" size="sm">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenPreview(true)}
+                  className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                  title="ดู Preview แบบเต็มจอ"
+                >
                   <i className="fa-solid fa-expand"></i>
-                </Button>
+                </button>
               </div>
               
+              {/* Scrollable Preview Container */}
+              <div className="flex-1 overflow-y-auto pr-2">
               {/* A4 Document Container */}
               <div className="flex justify-center">
               {/* Document Preview - A4 Size */}
-              <div className="bg-white rounded-lg shadow-lg border border-slate-300 overflow-hidden w-full max-w-[595px]" style={{ aspectRatio: '210/297' }}>
+              <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[595px]">
                 {/* Document Content */}
-                <div className="h-full overflow-y-auto">
+                <div>
                   <div className="p-5 text-[11px] leading-relaxed font-sarabun">
                     
                     {/* Document Header with Logo */}
@@ -704,8 +809,8 @@ export default function CarRequestForm({
                       {/* Closing request */}
                       <p className="text-justify" style={{ textIndent: '2.5em' }}>
                         จึงเรียนมาเพื่อโปรดพิจารณาขออนุมัติการเดินทางโดยรถยนต์ส่วนตัว 
-                        และขออนุมัติค่าชดเชยพาหนะเดินทางในการเข้าร่วมกิจกรรม ดังกล่าวจากงบประมาณ 
-                        {formData.budgetSource || ' RD-xx_ชื่อแหล่งงบประมาณ'}
+                        และขออนุมัติค่าชดเชยพาหนะเดินทางในการเข้าร่วมกิจกรรม ดังกล่าวจากงบประมาณ{' '}
+                        <span className="font-medium">{formData.documentSubject || 'RD-xx_ชื่อแหล่งงบประมาณ (รหัสโครงการ)'}</span>
                       </p>
                       
                       {/* Final Closing */}
@@ -752,15 +857,199 @@ export default function CarRequestForm({
                 </div>
               </div>
               </div>
+              </div>
               
               {/* Preview Info */}
-              <p className="text-xs text-slate-400 mt-3 text-center">
+              <p className="text-xs text-slate-400 mt-3 text-center shrink-0">
                 * ตัวอย่างเอกสารจะอัพเดทตามข้อมูลที่กรอก
               </p>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Preview Modal */}
+      {isFullscreenPreview && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-100 rounded-xl w-full max-w-5xl max-h-[95vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="font-bold text-slate-700">
+                <i className="fa-solid fa-eye mr-2"></i>
+                ตัวอย่างเอกสาร - แบบขออนุมัติใช้รถยนต์ส่วนตัว
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFullscreenPreview(false)}
+                className="w-10 h-10 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                title="ปิด"
+              >
+                <i className="fa-solid fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex justify-center">
+                {/* A4 Document Preview */}
+                <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[595px]">
+                  <div className="p-8 text-[12px] leading-relaxed font-sarabun">
+                    
+                    {/* Document Header with Logo */}
+                    <div className="flex items-start justify-between mb-2">
+                      <img 
+                        src="https://www.kmutt.ac.th/wp-content/uploads/2020/09/KMUTT_CI_Primary_Logo-Full.png" 
+                        alt="KMUTT Logo"
+                        className="w-20 h-auto object-contain"
+                      />
+                      <div className="flex-1 text-center pt-2">
+                        <h1 className="text-lg font-bold">บันทึกข้อความ</h1>
+                      </div>
+                      <div className="w-20"></div>
+                    </div>
+
+                    {/* Document Metadata */}
+                    <div className="space-y-1 mt-4">
+                      <div className="flex">
+                        <span className="font-bold w-24">ส่วนงาน</span>
+                        <span>ศูนย์ส่งเสริมและสนับสนุนโครงการหลวงและโครงการในพระราชดำริ โทร. 9682</span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-24">ที่</span>
+                        <span>อว.xxxx.x.x/xxx/xx</span>
+                        <span className="ml-auto">
+                          <span className="font-bold">วันที่</span> {formatThaiDate(new Date().toISOString().split('T')[0])}
+                        </span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-24">เรื่อง</span>
+                        <span>ขออนุมัติใช้รถยนต์ส่วนตัวและขออนุมัติค่าชดเชยพาหนะเดินทางในการเข้าร่วม{formData.tripPurpose || 'ประชุม/กิจกรรม'}</span>
+                      </div>
+                    </div>
+
+                    <div className="border-b-2 border-slate-400 my-4"></div>
+
+                    <div className="mb-4">
+                      <span className="font-bold">เรียน</span>
+                      <span className="ml-2">ผู้อำนวยการ สรบ. ผ่าน ผู้อำนวยการโครงการศูนย์ RSC</span>
+                    </div>
+                    
+                    {/* Body Content */}
+                    <div className="space-y-4 text-slate-800">
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        ข้าพเจ้า{formData.requesterName || 'นางสาว/นาย...........................'} 
+                        {' '}{formData.position || 'ผู้ช่วยนักวิจัย'} 
+                        {' '}โครงการวิจัยเรื่อง "{formData.projectName || '......................................'}" 
+                        {formData.department && <> สังกัด{formData.department}</>}
+                        {' '}โดยมี{formData.passengers ? formData.passengers.split(',')[0] : '...........................'} เป็นหัวหน้าโครงการ
+                      </p>
+                      
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        ทั้งนี้นักวิจัยมีความจำเป็นต้องเดินทางไปเข้าร่วม{formData.tripPurpose || 'นำเสนอผลงานทางวิชาการ'} 
+                        {' '}ใน "{formData.destination || 'การประชุมวิชาการ...'}" 
+                        {formData.province && <> จังหวัด{formData.province}</>}
+                        {' '}ระหว่างวันที่ {formatThaiDate(formData.departureDate)} 
+                        {formData.returnDate && formData.returnDate !== formData.departureDate && (
+                          <> - {formatThaiDate(formData.returnDate)}</>
+                        )}
+                        {' '}จึงขออนุมัติการเดินทางโดยรถยนต์ส่วนตัว 
+                        และขออนุมัติค่าชดเชยพาหนะ เป็นระยะทางรวม ไม่เกิน <span className="font-semibold">{formData.distanceKm || '...'}</span> กิโลเมตร 
+                        {' '}ประมาณการค่าใช้จ่ายเป็นเงินจำนวน <span className="font-semibold">{fuelCompensation.toLocaleString()}</span> บาท 
+                        {' '}({numberToThaiText(fuelCompensation)}) โดยมีรายละเอียดดังนี้
+                      </p>
+
+                      {/* Table of travelers */}
+                      <table className="w-full border-collapse border border-slate-400 text-[11px] my-4">
+                        <thead>
+                          <tr className="bg-slate-100">
+                            <th className="border border-slate-400 px-2 py-1 text-center w-16">ลำดับที่</th>
+                            <th className="border border-slate-400 px-2 py-1 text-center">ชื่อ-สกุล</th>
+                            <th className="border border-slate-400 px-2 py-1 text-center">ตำแหน่ง</th>
+                            <th className="border border-slate-400 px-2 py-1 text-center w-28">ทะเบียนรถ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-slate-400 px-2 py-1 text-center">1</td>
+                            <td className="border border-slate-400 px-2 py-1">{formData.requesterName || '...........................'}</td>
+                            <td className="border border-slate-400 px-2 py-1">{formData.position || 'หัวหน้าโครงการ'}</td>
+                            <td className="border border-slate-400 px-2 py-1 text-center">{formData.licensePlate || '... .... ....'}</td>
+                          </tr>
+                          {formData.passengers && formData.passengers.split(',').slice(0, 3).map((passenger, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-slate-400 px-2 py-1 text-center">{idx + 2}</td>
+                              <td className="border border-slate-400 px-2 py-1">{passenger.trim()}</td>
+                              <td className="border border-slate-400 px-2 py-1">ผู้ร่วมเดินทาง</td>
+                              <td className="border border-slate-400 px-2 py-1 text-center">-</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        จึงเรียนมาเพื่อโปรดพิจารณาขออนุมัติการเดินทางโดยรถยนต์ส่วนตัว 
+                        และขออนุมัติค่าชดเชยพาหนะเดินทางในการเข้าร่วมกิจกรรม ดังกล่าวจากงบประมาณ{' '}
+                        <span className="font-medium">{formData.documentSubject || 'RD-xx_ชื่อแหล่งงบประมาณ (รหัสโครงการ)'}</span>
+                      </p>
+                      
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
+                      </p>
+                    </div>
+                    
+                    {/* Requester Signature */}
+                    <div className="mt-10 flex justify-end">
+                      <div className="text-center">
+                        <p className="mb-2">(ลงชื่อ) ............................................</p>
+                        <p className="mb-2">( {formData.requesterName || '..........................................'} )</p>
+                        <p className="text-slate-600">{formData.position || 'ตำแหน่งในองค์กร'}</p>
+                        <p className="text-slate-500 text-[11px]">ผู้ขออนุมัติ (ผู้ประสานงาน / หัวหน้าโครงการ)</p>
+                      </div>
+                    </div>
+                    
+                    {/* Approval Signatures */}
+                    <div className="mt-10 pt-4 border-t border-slate-300">
+                      <div className="flex justify-between">
+                        <div className="text-center flex-1">
+                          <p className="text-left mb-6">เรียน ผอ.สรบ เพื่อโปรดพิจารณาอนุมัติ</p>
+                          <p className="mb-2">ลงชื่อ............................................</p>
+                          <p className="mb-2">(นายศุเรนทร์ ฐปนางกูร)</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการศูนย์ส่งเสริมและสนับสนุน</p>
+                          <p className="text-slate-600 text-[11px]">มูลนิธิโครงการหลวงและโครงการตามพระราชดำริ</p>
+                        </div>
+                        
+                        <div className="text-center flex-1">
+                          <p className="font-semibold mb-6">อนุมัติ</p>
+                          <p className="mb-2">ลงชื่อ............................................</p>
+                          <p className="mb-2">( ชื่อ นามสกุล )</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการ</p>
+                          <p className="text-slate-600 text-[11px]">สถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3">
+              <Button 
+                variant="secondary" 
+                onClick={() => setIsFullscreenPreview(false)}
+              >
+                <i className="fa-solid fa-times mr-2"></i>
+                ปิด
+              </Button>
+              <Button variant="primary">
+                <i className="fa-solid fa-print mr-2"></i>
+                พิมพ์
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

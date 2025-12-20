@@ -12,6 +12,7 @@ import {
   ScheduleTable,
   ExpenseTable,
 } from '../../components'
+import { fdCodes, getFDByAcc, getAccOptions, formatCurrency } from '../../data/fdCodes'
 
 /**
  * ProjectRequestForm
@@ -53,6 +54,20 @@ const getInitialFormData = () => ({
   parentProject: '',
   budgetSource: 'royal-fund',
   
+  // ACC Selection (main field for auto-fill)
+  selectedAcc: '',
+  documentSubject: '', // เรื่อง: ACC
+  
+  // FD Codes (auto-filled from ACC)
+  fdNumber: '',
+  planCode: '',
+  planName: '',
+  fundCode: '',
+  fundName: '',
+  projectCode: '',
+  expenseCode: '',
+  expenseName: '',
+  
   // Sub-project details
   projectName: '',
   subProjectName: '',
@@ -93,6 +108,9 @@ export default function ProjectRequestForm({
 }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  
+  // Fullscreen preview state
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState(false)
   
   // Form state - merge initial data if provided
   const [formData, setFormData] = useState(() => {
@@ -172,6 +190,42 @@ export default function ProjectRequestForm({
   // Handle field change
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Handle ACC selection - auto-fill related fields
+  const handleAccChange = (acc) => {
+    const fdData = getFDByAcc(acc)
+    if (fdData) {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        documentSubject: acc, // เรื่อง: ACC only
+        projectName: fdData.projectName,
+        fdNumber: fdData.fdCode,
+        planCode: fdData.planCode,
+        planName: fdData.planName,
+        fundCode: fdData.fundCode,
+        fundName: fdData.fundName,
+        projectCode: fdData.projectCode,
+        expenseCode: fdData.expenseCode,
+        expenseName: fdData.expenseName,
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        selectedAcc: acc,
+        documentSubject: '',
+        projectName: '',
+        fdNumber: '',
+        planCode: '',
+        planName: '',
+        fundCode: '',
+        fundName: '',
+        projectCode: '',
+        expenseCode: '',
+        expenseName: '',
+      }))
+    }
   }
 
   // Handle form submit
@@ -275,6 +329,33 @@ export default function ProjectRequestForm({
                 onChange={(e) => handleChange('budgetSource', e.target.value)}
                 required
               />
+            </div>
+            
+            {/* ACC Selection - Auto-fill budget source info */}
+            <div className="mt-4">
+              <Select
+                label="รหัสงบประมาณ (ACC)"
+                options={[{ value: '', label: '-- เลือกรหัสงบประมาณ --' }, ...getAccOptions()]}
+                value={formData.selectedAcc}
+                onChange={(e) => handleAccChange(e.target.value)}
+                required
+              />
+              {formData.selectedAcc && (
+                <div className="mt-3 p-3 bg-primary-50 rounded-lg border border-primary-200">
+                  <p className="text-sm font-medium text-primary-700 mb-2">
+                    <i className="fa-solid fa-circle-check mr-2"></i>
+                    ข้อมูลงบประมาณที่เลือก
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-primary-600">
+                    <div><span className="font-medium">โครงการ:</span> {formData.projectName}</div>
+                    <div><span className="font-medium">รหัสโครงการ:</span> {formData.projectCode}</div>
+                    <div><span className="font-medium">แผนงาน:</span> {formData.planName}</div>
+                    <div><span className="font-medium">รหัสแผนงาน:</span> {formData.planCode}</div>
+                    <div><span className="font-medium">แหล่งเงิน:</span> {formData.fundName}</div>
+                    <div><span className="font-medium">รหัสแหล่งเงิน:</span> {formData.fundCode}</div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="mt-4">
@@ -456,26 +537,33 @@ export default function ProjectRequestForm({
         </div>
 
         {/* Preview Section */}
-        <div>
-          <div className="sticky top-4">
-            <Card className="bg-slate-100 border-none p-4">
-              <div className="flex items-center justify-between mb-3">
+        <div className="h-[calc(100vh-120px)]">
+          <div className="sticky top-4 h-full flex flex-col">
+            <Card className="bg-slate-100 border-none p-4 flex-1 flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   <i className="fa-solid fa-eye mr-2"></i>
                   ตัวอย่างเอกสาร
                 </h3>
-                <Button variant="ghost" size="sm">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenPreview(true)}
+                  className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                  title="ดู Preview แบบเต็มจอ"
+                >
                   <i className="fa-solid fa-expand"></i>
-                </Button>
+                </button>
               </div>
               
+              {/* Scrollable Preview Container */}
+              <div className="flex-1 overflow-y-auto pr-2">
               {/* A4 Document Container */}
               <div className="flex justify-center">
               
               {/* Document Preview - Official Format - A4 Size */}
-              <div className="bg-white rounded-lg shadow-lg border border-slate-300 overflow-hidden w-full max-w-[595px]" style={{ aspectRatio: '210/297' }}>
+              <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[595px]">
                 {/* Document Content */}
-                <div className="h-full overflow-y-auto">
+                <div>
                   <div className="p-6 text-[11px] leading-relaxed font-sarabun">
                     
                     {/* Header with Logo */}
@@ -559,15 +647,9 @@ export default function ProjectRequestForm({
                       
                       {/* Budget Paragraph */}
                       <p className="text-justify" style={{ textIndent: '2.5em' }}>
-                        โดยใช้งบประมาณจาก
-                        {formData.budgetSource === 'royal-fund' ? 'โครงการหลวง' : 
-                          formData.budgetSource === 'university' ? 'งบมหาวิทยาลัย' : 'งบภายนอก'}
-                        {formData.parentProject && (
-                          <> ({parentProjects.find(p => p.value === formData.parentProject)?.label})</>
-                        )}
-                        {' '}รวมเป็นเงินทั้งสิ้น{' '}
-                        <span className="font-semibold">{totalBudget.toLocaleString()}</span> บาท 
-                        ({numberToThaiText(totalBudget)})
+                        ในการนี้ข้าพเจ้าจึงใคร่ขออนุมัติเดินทางตามวัน เวลา และสถานที่ดังกล่าว พร้อมทั้งขออนุมัติค่าใช้จ่าย จำนวน{' '}
+                        <span className="font-semibold">{totalBudget.toLocaleString()}.-</span> บาท 
+                        ({numberToThaiText(totalBudget)}) จากงบประมาณ {formData.documentSubject || '..................'}
                       </p>
                       
                       {/* Closing */}
@@ -614,15 +696,180 @@ export default function ProjectRequestForm({
                 </div>
               </div>
               </div>
+              </div>
               
               {/* Preview Info */}
-              <p className="text-xs text-slate-400 mt-3 text-center">
+              <p className="text-xs text-slate-400 mt-3 text-center shrink-0">
                 * ตัวอย่างเอกสารจะอัพเดทตามข้อมูลที่กรอก
               </p>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Preview Modal */}
+      {isFullscreenPreview && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-100 rounded-xl w-full max-w-5xl max-h-[95vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="font-bold text-slate-700">
+                <i className="fa-solid fa-eye mr-2"></i>
+                ตัวอย่างเอกสาร - บันทึกข้อความขออนุมัติโครงการ
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFullscreenPreview(false)}
+                className="w-10 h-10 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
+                title="ปิด"
+              >
+                <i className="fa-solid fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex justify-center">
+                {/* A4 Document Preview */}
+                <div className="bg-white rounded-lg shadow-lg border border-slate-300 w-full max-w-[595px]">
+                  <div className="p-8 text-[12px] leading-relaxed font-sarabun">
+                    
+                    {/* Header with Logo */}
+                    <div className="flex items-start gap-4 mb-1">
+                      <img 
+                        src="https://www.kmutt.ac.th/wp-content/uploads/2020/09/KMUTT_CI_Primary_Logo-Full.png" 
+                        alt="KMUTT Logo"
+                        className="w-20 h-auto object-contain"
+                      />
+                      <div className="flex-1 text-center pt-2">
+                        <h1 className="text-lg font-bold">บันทึกข้อความ</h1>
+                      </div>
+                      <div className="w-20"></div>
+                    </div>
+
+                    {/* Document Metadata */}
+                    <div className="space-y-1 mt-4">
+                      <div className="flex">
+                        <span className="font-bold w-24">ส่วนงาน</span>
+                        <span>ศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ โทร. 9682</span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-24">ที่</span>
+                        <span>{formData.documentNumber || 'อว xxxx/...........'}</span>
+                        <span className="ml-auto">
+                          <span className="font-bold">วันที่</span> {formatThaiDate(new Date().toISOString().split('T')[0])}
+                        </span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold w-24">เรื่อง</span>
+                        <span>ขออนุมัติ{formData.subProjectName || '......................................'}</span>
+                      </div>
+                    </div>
+
+                    <div className="border-b-2 border-slate-400 my-4"></div>
+
+                    <div className="mb-4">
+                      <span className="font-bold">เรียน</span>
+                      <span className="ml-2">ผู้อำนวยการศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ</span>
+                    </div>
+                    
+                    {/* Body Content */}
+                    <div className="space-y-4 text-slate-800">
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        ตามที่ศูนย์ส่งเสริมและสนับสนุนมูลนิธิโครงการหลวงและโครงการตามพระราชดำริ ได้ดำเนินงาน
+                        {formData.parentProject 
+                          ? parentProjects.find(p => p.value === formData.parentProject)?.label 
+                          : '...................................................'
+                        } 
+                        {' '}ประจำปีงบประมาณ พ.ศ. {formData.fiscalYear} นั้น
+                      </p>
+                      
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        บัดนี้ {user?.name || 'ข้าพเจ้า'} มีความประสงค์ขออนุมัติดำเนินงาน
+                        <span className="font-semibold">{formData.subProjectName || '......................................'}</span>
+                        {formData.objectives && (
+                          <> โดยมีวัตถุประสงค์{formData.objectives}</>
+                        )}
+                        {formData.targetGroup && formData.targetCount && (
+                          <> กลุ่มเป้าหมาย {formData.targetGroup} จำนวน {formData.targetCount} คน</>
+                        )}
+                        {formData.location && (
+                          <> ณ {formData.location}{formData.province && ` จังหวัด${formData.province}`}</>
+                        )}
+                        {formData.startDate && (
+                          <> ในวันที่ {formatThaiDate(formData.startDate)}
+                          {formData.endDate && formData.endDate !== formData.startDate && (
+                            <> ถึงวันที่ {formatThaiDate(formData.endDate)}</>
+                          )}
+                          </>
+                        )}
+                        {' '}รายละเอียดตามสิ่งที่ส่งมาด้วย
+                      </p>
+                      
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        ในการนี้ข้าพเจ้าจึงใคร่ขออนุมัติเดินทางตามวัน เวลา และสถานที่ดังกล่าว พร้อมทั้งขออนุมัติค่าใช้จ่าย จำนวน{' '}
+                        <span className="font-semibold">{totalBudget.toLocaleString()}.-</span> บาท 
+                        ({numberToThaiText(totalBudget)}) จากงบประมาณ {formData.documentSubject || '..................'}
+                      </p>
+                      
+                      <p className="text-justify" style={{ textIndent: '2.5em' }}>
+                        จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
+                      </p>
+                    </div>
+                    
+                    {/* Requester Signature */}
+                    <div className="mt-10 flex justify-end">
+                      <div className="text-center">
+                        <p className="mb-2">(ลงชื่อ) ............................................</p>
+                        <p className="mb-2">( {user?.name || '..........................................'} )</p>
+                        <p className="text-slate-600">{user?.position || 'ตำแหน่งในองค์กร'}</p>
+                        <p className="text-slate-500 text-[11px]">ผู้ขออนุมัติ (ผู้ประสานงาน / หัวหน้าโครงการ)</p>
+                      </div>
+                    </div>
+                    
+                    {/* Approval Signatures */}
+                    <div className="mt-10 pt-4 border-t border-slate-300">
+                      <div className="flex justify-between">
+                        <div className="text-center flex-1">
+                          <p className="text-left mb-6">เรียน ผอ.สรบ เพื่อโปรดพิจารณาอนุมัติ</p>
+                          <p className="mb-2">ลงชื่อ............................................</p>
+                          <p className="mb-2">(นายศุเรนทร์ ฐปนางกูร)</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการศูนย์ส่งเสริมและสนับสนุน</p>
+                          <p className="text-slate-600 text-[11px]">มูลนิธิโครงการหลวงและโครงการตามพระราชดำริ</p>
+                        </div>
+                        
+                        <div className="text-center flex-1">
+                          <p className="font-semibold mb-6">อนุมัติ</p>
+                          <p className="mb-2">ลงชื่อ............................................</p>
+                          <p className="mb-2">( ชื่อ นามสกุล )</p>
+                          <p className="text-slate-600 text-[11px]">ผู้อำนวยการ</p>
+                          <p className="text-slate-600 text-[11px]">สถาบันพัฒนาและฝึกอบรมโรงงานต้นแบบ</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3">
+              <Button 
+                variant="secondary" 
+                onClick={() => setIsFullscreenPreview(false)}
+              >
+                <i className="fa-solid fa-times mr-2"></i>
+                ปิด
+              </Button>
+              <Button variant="primary">
+                <i className="fa-solid fa-print mr-2"></i>
+                พิมพ์
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

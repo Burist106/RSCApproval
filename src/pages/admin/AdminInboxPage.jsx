@@ -9,7 +9,7 @@ import { Button, Card, StatusBadge, Table, Input, Select } from '../../component
 
 // Mock pending requests for admin
 const mockPendingRequests = [
-  { id: 'BD-089', type: 'project', typeName: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'ดร.สมชาย ใจดี' },
+  { id: 'BD-089', type: 'project', typeName: 'ขออนุมัติโครงการ', title: 'โครงการอบรม AI สำหรับเกษตรกร', status: 'pending', date: '2025-12-01', amount: 45000, requester: 'สมชาย ใจดี' },
   { id: 'BD-088', type: 'loan', typeName: 'ยืมเงิน', title: 'ค่าเดินทางประชุมวิชาการ', status: 'pending', date: '2025-11-30', amount: 12000, requester: 'ดร.มานี มานะ' },
   { id: 'BD-087', type: 'car', typeName: 'ขอใช้รถยนต์', title: 'เดินทางไปพื้นที่โครงการหลวง', status: 'pending', date: '2025-11-28', amount: null, requester: 'ผศ.สมศรี ศรีสม' },
   { id: 'BD-086', type: 'travel', typeName: 'เดินทางราชการ', title: 'ประชุมวิชาการ ณ กรุงเทพฯ', status: 'reviewing', date: '2025-11-25', amount: 8500, requester: 'รศ.สมหมาย หมายดี' },
