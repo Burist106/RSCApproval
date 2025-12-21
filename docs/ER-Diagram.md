@@ -1,8 +1,11 @@
 # RSC Smart Approval - ER Diagram
 
+> 💡 **Note:** Diagrams ในเอกสารนี้รองรับทั้ง Light Mode และ Dark Mode
+
 ## Entity Relationship Diagram
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4f46e5', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#6366f1', 'lineColor': '#94a3b8', 'secondaryColor': '#10b981', 'tertiaryColor': '#f59e0b', 'background': '#1e293b', 'mainBkg': '#334155', 'textColor': '#f1f5f9', 'border1': '#475569', 'border2': '#64748b', 'arrowheadColor': '#94a3b8', 'fontFamily': 'system-ui, -apple-system, sans-serif' }}}%%
 erDiagram
     %% ==========================================
     %% USER & ORGANIZATION ENTITIES
@@ -476,6 +479,7 @@ erDiagram
 ## Status Flow
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4f46e5', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#6366f1', 'lineColor': '#94a3b8', 'secondaryColor': '#10b981', 'tertiaryColor': '#f59e0b', 'background': '#1e293b', 'mainBkg': '#334155', 'textColor': '#f1f5f9', 'labelTextColor': '#f1f5f9', 'stateBkg': '#334155', 'stateLabelColor': '#f1f5f9', 'transitionColor': '#94a3b8', 'transitionLabelColor': '#e2e8f0', 'fontFamily': 'system-ui, -apple-system, sans-serif' }}}%%
 stateDiagram-v2
     [*] --> draft: สร้างคำขอ
     draft --> pending: ส่งคำขอ
@@ -494,6 +498,7 @@ stateDiagram-v2
 ## Workflow Paths
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#94a3b8', 'secondaryColor': '#10b981', 'tertiaryColor': '#f59e0b', 'background': '#1e293b', 'mainBkg': '#334155', 'textColor': '#f1f5f9', 'nodeBorder': '#64748b', 'clusterBkg': '#1e293b', 'clusterBorder': '#475569', 'edgeLabelBackground': '#334155', 'fontFamily': 'system-ui, -apple-system, sans-serif' }}}%%
 flowchart TB
     subgraph Path1["Path 1: ขออนุมัติโครงการ"]
         P1A[กรอกข้อมูลโครงการ] --> P1B{ใช้รถส่วนตัว?}
@@ -538,13 +543,14 @@ flowchart TB
 ## Complete System Flow (Full Workflow)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#94a3b8', 'background': '#1e293b', 'mainBkg': '#334155', 'textColor': '#f1f5f9', 'nodeBorder': '#64748b', 'clusterBkg': '#1e293b', 'clusterBorder': '#475569', 'edgeLabelBackground': '#334155', 'fontFamily': 'system-ui, -apple-system, sans-serif' }}}%%
 flowchart TD
-    %% Define Styles
-    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef admin fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
-    classDef director fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    classDef system fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5;
-    classDef endNode fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    %% Define Styles (Dark Mode Compatible - High Contrast)
+    classDef user fill:#0ea5e9,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    classDef admin fill:#eab308,stroke:#facc15,stroke-width:2px,color:#1e293b;
+    classDef director fill:#22c55e,stroke:#4ade80,stroke-width:2px,color:#ffffff;
+    classDef system fill:#a855f7,stroke:#c084fc,stroke-width:2px,stroke-dasharray: 5 5,color:#ffffff;
+    classDef endNode fill:#ef4444,stroke:#f87171,stroke-width:2px,color:#ffffff;
 
     %% Start Process
     Start((จุดเริ่มต้น)) --> Login[เข้าสู่ระบบ]
@@ -654,13 +660,13 @@ flowchart TD
 
 ### Flow Legend
 
-| Color | Role | Description |
-|-------|------|-------------|
-| 🔵 Light Blue | **B-Level (นักวิจัย)** | สร้างและกรอกแบบฟอร์มคำขอ |
-| 🟡 Yellow | **Admin (เจ้าหน้าที่)** | ตรวจสอบเอกสารเบื้องต้น (Screening) |
-| 🟢 Green | **A-Level (ผอ.ศูนย์)** | พิจารณาอนุมัติ/เห็นชอบ |
-| 🟣 Purple (Dashed) | **System** | ประมวลผลอัตโนมัติ |
-| 🔴 Red | **Start/End** | จุดเริ่มต้น/สิ้นสุด |
+| สี | บทบาท | คำอธิบาย |
+|:---:|--------|-------------|
+| 🔵 **Cyan** | **B-Level (นักวิจัย)** | สร้างและกรอกแบบฟอร์มคำขอ |
+| 🟡 **Yellow** | **Admin (เจ้าหน้าที่)** | ตรวจสอบเอกสารเบื้องต้น (Screening) |
+| 🟢 **Green** | **A-Level (ผอ.ศูนย์)** | พิจารณาอนุมัติ/เห็นชอบ |
+| 🟣 **Purple** _(Dashed)_ | **System** | ประมวลผลอัตโนมัติ |
+| 🔴 **Red** | **Start/End** | จุดเริ่มต้น/สิ้นสุด |
 
 ---
 
