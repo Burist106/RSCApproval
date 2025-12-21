@@ -298,6 +298,36 @@ export default function CarRequestForm({
     alert('บันทึกฉบับร่างเรียบร้อยแล้ว!')
   }
 
+  // Fill demo data for presentation
+  const fillDemoData = () => {
+    const demoData = {
+      requesterName: 'นายศุเรนทร์ ฐปนางกูร',
+      position: 'นักวิจัย',
+      department: 'ศูนย์ RSC',
+      tripPurpose: 'เดินทางไปตรวจเยี่ยมโครงการหลวงที่เชียงใหม่ เพื่อติดตามความก้าวหน้าและเก็บข้อมูลวิจัย',
+      destination: 'ศูนย์พัฒนาโครงการหลวงหนองหอย อ.แม่ริม',
+      origin: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี',
+      province: 'เชียงใหม่',
+      departureDate: '2025-01-15',
+      departureTime: '06:00',
+      returnDate: '2025-01-17',
+      returnTime: '20:00',
+      passengers: 'นางสาวสมหญิง ใจดี, นายสมชาย รักงาน',
+      passengerCount: '2',
+      carType: 'suv',
+      carBrand: 'Toyota',
+      carModel: 'Fortuner',
+      licensePlate: 'กข 1234 กรุงเทพมหานคร',
+      engineSize: '2400',
+      distanceKm: '1400',
+      reason: 'no_university_car',
+      reasonOther: '',
+      selectedAcc: 'ACC-RSC-001',
+      notes: 'เดินทางไป-กลับ กรุงเทพฯ - เชียงใหม่ ระยะทางประมาณ 700 กม. x 2 เที่ยว',
+    }
+    setFormData(prev => ({ ...prev, ...demoData }))
+  }
+
   return (
     <div className={isEmbedded ? "" : "max-w-7xl mx-auto"}>
       {/* Header - only show in standalone mode */}
@@ -317,6 +347,10 @@ export default function CarRequestForm({
             <p className="text-sm text-slate-500">แบบขออนุมัติใช้รถยนต์ส่วนตัวเดินทางไปราชการ</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              Fill Demo
+            </Button>
             <Button variant="outline" onClick={handleSaveDraft}>
               <i className="fa-solid fa-floppy-disk"></i>
               บันทึกฉบับร่าง
@@ -662,20 +696,25 @@ export default function CarRequestForm({
           </Card>
 
           {/* Actions - Mobile/Embedded */}
-          <div className={isEmbedded ? "flex gap-3 justify-end" : "xl:hidden flex gap-3"}>
-            <Button variant="outline" onClick={handleBack}>
-              {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
+          <div className={isEmbedded ? "flex gap-3 justify-between" : "xl:hidden flex gap-3"}>
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50" title="Fill Demo Data">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
             </Button>
-            {!isEmbedded && (
-              <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
-                <i className="fa-solid fa-floppy-disk"></i>
-                บันทึกฉบับร่าง
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBack}>
+                {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
               </Button>
-            )}
-            <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
-              <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
-              {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
-            </Button>
+              {!isEmbedded && (
+                <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  บันทึกฉบับร่าง
+                </Button>
+              )}
+              <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
+                <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
+                {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
+              </Button>
+            </div>
           </div>
         </div>
 

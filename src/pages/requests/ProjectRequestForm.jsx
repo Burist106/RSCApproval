@@ -271,6 +271,41 @@ export default function ProjectRequestForm({
     alert('บันทึกฉบับร่างเรียบร้อยแล้ว!')
   }
 
+  // Fill demo data for presentation
+  const fillDemoData = () => {
+    const demoData = {
+      fiscalYear: '2568',
+      parentProject: 'royal-1',
+      budgetSource: 'royal-fund',
+      selectedAcc: 'ACC-RSC-001',
+      projectName: 'โครงการส่งเสริมและสนับสนุนมูลนิธิโครงการหลวง',
+      subProjectName: 'โครงการอบรมเชิงปฏิบัติการการพัฒนาระบบเกษตรอัจฉริยะ',
+      objectives: 'เพื่อพัฒนาความรู้และทักษะให้กับเกษตรกรในพื้นที่โครงการหลวง ในการใช้เทคโนโลยี IoT และ AI เพื่อการเกษตรที่ยั่งยืน',
+      expectedOutcome: '1. เกษตรกรจำนวน 50 คน ได้รับการอบรมและสามารถใช้เทคโนโลยีได้\n2. ระบบ Smart Farm ต้นแบบ 3 แห่ง\n3. คู่มือการใช้งานระบบ 1 ชุด',
+      targetGroup: 'เกษตรกรในพื้นที่โครงการหลวงหนองหอย และโครงการหลวงแม่สะป๊อก',
+      targetCount: '50',
+      location: 'ศูนย์พัฒนาโครงการหลวงหนองหอย',
+      province: 'เชียงใหม่',
+      startDate: '2025-01-15',
+      endDate: '2025-01-17',
+      schedule: [
+        { date: '2025-01-15', time: '09:00-12:00', activity: 'ลงทะเบียนและพิธีเปิด / บรรยายหลักการ Smart Farm' },
+        { date: '2025-01-15', time: '13:00-17:00', activity: 'Workshop: การติดตั้งเซ็นเซอร์และระบบ IoT' },
+        { date: '2025-01-16', time: '09:00-17:00', activity: 'ฝึกปฏิบัติ: การใช้แอปพลิเคชันควบคุมระบบน้ำอัตโนมัติ' },
+        { date: '2025-01-17', time: '09:00-12:00', activity: 'นำเสนอผลงานกลุ่มและพิธีปิด' },
+      ],
+      expenses: [
+        { item: 'ค่าวิทยากร', quantity: 3, unit: 'คน', unitPrice: 6000, amount: 18000 },
+        { item: 'ค่าอาหารและเครื่องดื่ม', quantity: 50, unit: 'คน', unitPrice: 300, amount: 15000 },
+        { item: 'ค่าเอกสารประกอบการอบรม', quantity: 50, unit: 'ชุด', unitPrice: 200, amount: 10000 },
+        { item: 'ค่าวัสดุอุปกรณ์ฝึกปฏิบัติ', quantity: 1, unit: 'ชุด', unitPrice: 25000, amount: 25000 },
+        { item: 'ค่าเดินทาง', quantity: 3, unit: 'คน', unitPrice: 5000, amount: 15000 },
+      ],
+      notes: 'โครงการนี้เป็นส่วนหนึ่งของแผนพัฒนาศูนย์ RSC ประจำปี 2568',
+    }
+    setFormData(prev => ({ ...prev, ...demoData }))
+  }
+
   return (
     <div className={isEmbedded ? "" : "max-w-7xl mx-auto"}>
       {/* Header - only show in standalone mode */}
@@ -290,6 +325,10 @@ export default function ProjectRequestForm({
             <p className="text-sm text-slate-500">บันทึกข้อความขออนุมัติโครงการและโครงการย่อย</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              Fill Demo
+            </Button>
             <Button variant="outline" onClick={handleSaveDraft}>
               <i className="fa-solid fa-floppy-disk"></i>
               บันทึกฉบับร่าง
@@ -519,20 +558,25 @@ export default function ProjectRequestForm({
           </Card>
 
           {/* Actions - Mobile/Embedded */}
-          <div className={isEmbedded ? "flex gap-3 justify-end" : "xl:hidden flex gap-3"}>
-            <Button variant="outline" onClick={handleBack}>
-              {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
+          <div className={isEmbedded ? "flex gap-3 justify-between" : "xl:hidden flex gap-3"}>
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50" title="Fill Demo Data">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
             </Button>
-            {!isEmbedded && (
-              <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
-                <i className="fa-solid fa-floppy-disk"></i>
-                บันทึกฉบับร่าง
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBack}>
+                {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
               </Button>
-            )}
-            <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
-              <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
-              {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
-            </Button>
+              {!isEmbedded && (
+                <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  บันทึกฉบับร่าง
+                </Button>
+              )}
+              <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
+                <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
+                {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
+              </Button>
+            </div>
           </div>
         </div>
 

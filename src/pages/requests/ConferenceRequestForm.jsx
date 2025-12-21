@@ -280,18 +280,59 @@ export default function ConferenceRequestForm({
     return project?.label || '-'
   }
 
+  // Fill demo data for presentation
+  const fillDemoData = () => {
+    const demoData = {
+      parentProject: 'royal-1',
+      eventName: 'การประชุมวิชาการนานาชาติด้านเกษตรอัจฉริยะ Smart Agriculture 2025',
+      organizer: 'สมาคมวิศวกรรมเกษตรแห่งประเทศไทย ร่วมกับ มหาวิทยาลัยเกษตรศาสตร์',
+      eventLocation: 'โรงแรมเซ็นทารา แกรนด์ แอท เซ็นทรัลเวิลด์',
+      eventProvince: 'กรุงเทพมหานคร',
+      travelRegion: 'domestic',
+      eventStartDate: '2025-02-10',
+      eventEndDate: '2025-02-12',
+      travelStartDate: '2025-02-10',
+      travelEndDate: '2025-02-12',
+      participationType: 'presenter',
+      presentationTitle: 'การประยุกต์ใช้ AI ในการพยากรณ์ผลผลิตพืชไร่บนพื้นที่สูง',
+      registrationFee: '3500',
+      selectedAcc: 'ACC-RSC-001',
+      travelItinerary: [
+        { date: '2025-02-10', from: 'มจธ. บางมด', to: 'โรงแรมเซ็นทารา เซ็นทรัลเวิลด์', vehicle: 'รถไฟฟ้า BTS', fare: 60 },
+        { date: '2025-02-12', from: 'โรงแรมเซ็นทารา เซ็นทรัลเวิลด์', to: 'มจธ. บางมด', vehicle: 'รถไฟฟ้า BTS', fare: 60 },
+      ],
+      allowances: [
+        { date: '2025-02-10', perDiemAmount: 240, accommodationAmount: 0, perDiemNote: 'วันแรกของการประชุม' },
+        { date: '2025-02-11', perDiemAmount: 240, accommodationAmount: 1800, perDiemNote: 'วันที่สองของการประชุม' },
+        { date: '2025-02-12', perDiemAmount: 240, accommodationAmount: 0, perDiemNote: 'วันสุดท้าย' },
+      ],
+      otherExpenses: [
+        { description: 'ค่าถ่ายเอกสารประกอบการนำเสนอ', amount: 500 },
+        { description: 'ค่าจัดทำโปสเตอร์', amount: 1200 },
+      ],
+      notes: 'การประชุมนี้เป็นเวทีสำคัญในการเผยแพร่ผลงานวิจัยของศูนย์ RSC และสร้างเครือข่ายความร่วมมือกับหน่วยงานต่างๆ',
+    }
+    setFormData(prev => ({ ...prev, ...demoData }))
+  }
+
   return (
     <div className={isEmbedded ? "" : "max-w-7xl mx-auto"}>
       {/* Header - only show in standalone mode */}
       {!isEmbedded && (
         <div className="mb-6">
-          <button 
-            onClick={handleBack}
-            className="text-gray-500 hover:text-gray-700 mb-4 inline-flex items-center gap-2"
-          >
-            <i className="fa-solid fa-arrow-left"></i>
-            กลับหน้าเลือกประเภทคำขอ
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button 
+              onClick={handleBack}
+              className="text-gray-500 hover:text-gray-700 inline-flex items-center gap-2"
+            >
+              <i className="fa-solid fa-arrow-left"></i>
+              กลับหน้าเลือกประเภทคำขอ
+            </button>
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              Fill Demo
+            </Button>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">
             แบบขออนุมัติเข้าร่วมประชุม/สัมมนา/เดินทางไปราชการ
           </h1>
@@ -711,31 +752,42 @@ export default function ConferenceRequestForm({
             </Card>
 
             {/* Submit Buttons */}
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-between gap-3">
               <Button
                 type="button"
-                variant="outline"
-                onClick={handleBack}
+                variant="ghost"
+                onClick={fillDemoData}
+                className="text-amber-600 hover:bg-amber-50"
               >
-                {isEmbedded ? 'ย้อนกลับ' : 'ยกเลิก'}
+                <i className="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                Fill Demo
               </Button>
-              {!isEmbedded && (
+              <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    // TODO: Save draft logic
-                    alert('บันทึกฉบับร่างแล้ว')
-                  }}
+                  variant="outline"
+                  onClick={handleBack}
                 >
-                  <i className="fa-solid fa-save mr-2"></i>
-                  บันทึกฉบับร่าง
+                  {isEmbedded ? 'ย้อนกลับ' : 'ยกเลิก'}
                 </Button>
-              )}
-              <Button type="submit">
-                <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'} mr-2`}></i>
-                {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขออนุมัติ'}
-              </Button>
+                {!isEmbedded && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      // TODO: Save draft logic
+                      alert('บันทึกฉบับร่างแล้ว')
+                    }}
+                  >
+                    <i className="fa-solid fa-save mr-2"></i>
+                    บันทึกฉบับร่าง
+                  </Button>
+                )}
+                <Button type="submit">
+                  <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'} mr-2`}></i>
+                  {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขออนุมัติ'}
+                </Button>
+              </div>
             </div>
           </div>
 

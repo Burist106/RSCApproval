@@ -91,6 +91,9 @@ const getInitialFormData = (user) => ({
   // เอกสารแนบ
   attachments: [],
   
+  // รายการค่าใช้จ่าย
+  activities: [{ id: 1, name: '', amount: 0, note: '' }],
+  
   // For bundle preview
   totalAmount: 0,
   referenceDoc: '',
@@ -359,23 +362,26 @@ export default function LoanRequestForm({
 
   // Handle activity change
   const handleActivityChange = (index, field, value) => {
-    const newActivities = [...formData.activities]
+    const activities = formData.activities || []
+    const newActivities = [...activities]
     newActivities[index] = { ...newActivities[index], [field]: value }
     setFormData(prev => ({ ...prev, activities: newActivities }))
   }
 
   // Add activity
   const handleAddActivity = () => {
+    const activities = formData.activities || []
     setFormData(prev => ({
       ...prev,
-      activities: [...prev.activities, { id: Date.now(), name: '', amount: 0, note: '' }]
+      activities: [...activities, { id: Date.now(), name: '', amount: 0, note: '' }]
     }))
   }
 
   // Remove activity
   const handleRemoveActivity = (index) => {
-    if (formData.activities.length > 1) {
-      const newActivities = formData.activities.filter((_, i) => i !== index)
+    const activities = formData.activities || []
+    if (activities.length > 1) {
+      const newActivities = activities.filter((_, i) => i !== index)
       setFormData(prev => ({ ...prev, activities: newActivities }))
     }
   }
@@ -383,10 +389,11 @@ export default function LoanRequestForm({
   // Handle submit
   const handleSubmit = () => {
     // Prepare data for bundle preview
+    const activities = formData.activities || []
     const submitData = {
       ...formData,
       totalAmount: totalAmount,
-      items: formData.activities.map(a => ({ description: a.name, amount: a.amount })),
+      items: activities.filter(a => a.name).map(a => ({ description: a.name, amount: a.amount || 0 })),
       dueDate: formData.returnDate,
       referenceDoc: formData.projectName || 'ไม่ระบุ',
     }
@@ -418,6 +425,32 @@ export default function LoanRequestForm({
     alert('บันทึกฉบับร่างเรียบร้อยแล้ว!')
   }
 
+  // Fill demo data for presentation
+  const fillDemoData = () => {
+    const demoData = {
+      toDirector: 'ผอ.สรบ.',
+      documentNumber: '',
+      borrowerTitle: 'นาย',
+      borrowerName: 'ศุเรนทร์ ฐปนางกูร',
+      borrowerPosition: 'นักวิจัย',
+      borrowerDepartment: 'ศูนย์ RSC',
+      borrowerAddress: '126 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กทม. 10140',
+      borrowerPhone: '02-470-9682',
+      selectedAcc: 'ACC-RSC-001',
+      purpose: 'เพื่อเป็นค่าใช้จ่ายในการเดินทางไปปฏิบัติงานโครงการอบรมเชิงปฏิบัติการ ณ ศูนย์พัฒนาโครงการหลวงหนองหอย จ.เชียงใหม่',
+      referenceDoc: 'บันทึกข้อความขออนุมัติโครงการ เลขที่ อว 7601/0001',
+      items: [
+        { description: 'ค่าเบี้ยเลี้ยง 3 วัน x 240 บาท', amount: 720 },
+        { description: 'ค่าที่พัก 2 คืน x 1,500 บาท', amount: 3000 },
+        { description: 'ค่าพาหนะเดินทาง (น้ำมันรถ กรุงเทพฯ-เชียงใหม่ ไป-กลับ)', amount: 5600 },
+        { description: 'ค่าใช้จ่ายอื่นๆ (ค่าทางด่วน, ค่าที่จอดรถ)', amount: 680 },
+      ],
+      expectedReturnDate: '2025-01-25',
+      notes: 'คาดว่าจะคืนเงินภายใน 7 วันหลังเดินทางกลับ',
+    }
+    setFormData(prev => ({ ...prev, ...demoData }))
+  }
+
   return (
     <div className={isEmbedded ? "" : "max-w-7xl mx-auto"}>
       {/* Header - only show in standalone mode */}
@@ -437,6 +470,10 @@ export default function LoanRequestForm({
             <p className="text-sm text-slate-500">มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              Fill Demo
+            </Button>
             <Button variant="outline" onClick={handleSaveDraft}>
               <i className="fa-solid fa-floppy-disk"></i>
               บันทึกฉบับร่าง
@@ -899,20 +936,25 @@ export default function LoanRequestForm({
           </Card>
 
           {/* Actions - Mobile/Embedded */}
-          <div className={isEmbedded ? "flex gap-3 justify-end" : "xl:hidden flex gap-3"}>
-            <Button variant="outline" onClick={handleBack}>
-              {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
+          <div className={isEmbedded ? "flex gap-3 justify-between" : "xl:hidden flex gap-3"}>
+            <Button variant="ghost" onClick={fillDemoData} className="text-amber-600 hover:bg-amber-50" title="Fill Demo Data">
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
             </Button>
-            {!isEmbedded && (
-              <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
-                <i className="fa-solid fa-floppy-disk"></i>
-                บันทึกฉบับร่าง
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBack}>
+                {isEmbedded ? <><i className="fa-solid fa-arrow-left"></i> ย้อนกลับ</> : <><i className="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง</>}
               </Button>
-            )}
-            <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
-              <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
-              {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
-            </Button>
+              {!isEmbedded && (
+                <Button variant="outline" className="flex-1" onClick={handleSaveDraft}>
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  บันทึกฉบับร่าง
+                </Button>
+              )}
+              <Button variant="primary" className={isEmbedded ? "" : "flex-1"} onClick={handleSubmit}>
+                <i className={`fa-solid ${isEmbedded ? 'fa-arrow-right' : 'fa-paper-plane'}`}></i>
+                {isEmbedded ? 'บันทึกและไปขั้นตอนถัดไป' : 'ส่งคำขอ'}
+              </Button>
+            </div>
           </div>
         </div>
 
