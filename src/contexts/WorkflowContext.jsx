@@ -5,38 +5,51 @@ import { createContext, useContext, useState, useCallback } from 'react'
  * Manages the entire request workflow based on the flowchart
  * 
  * 4 Main Paths:
- * - Path 1: ขอทุนสนับสนุนการประชุม/นำเสนอผลงาน (Conference Support)
- * - Path 2: ขอสำรองจ่าย/ยืมเงินทดรอง (Advance/Loan Request)
- * - Path 3: ขอเดินทางราชการ (Official Travel)
- * - Path 4: ขอเปิดโครงการวิจัย (Research Project)
+ * - Path 1: ขออนุมัติโครงการ (Project Request) - Full Bundle
+ * - Path 2: สัญญายืมเงิน (Loan Request - FOTO-04)
+ * - Path 3: ขอใช้รถส่วนตัว (Personal Car Request)
+ * - Path 4: ขออนุมัติประชุม/เดินทาง (Conference/Travel Request)
+ * 
+ * Workflow:
+ * - B-Level (นักวิจัย): สร้างและติดตามคำขอ
+ * - Admin (เจ้าหน้าที่): ตรวจสอบเอกสารเบื้องต้น (Screening)
+ * - A-Level (ผอ.ศูนย์): พิจารณาอนุมัติ
+ * 
+ * Approval Logic:
+ * - ≤ 50,000 บาท: APPROVED (อนุมัติ)
+ * - > 50,000 บาท: AGREED (เห็นชอบ - ต้องส่งต่อ)
  */
 
 const WorkflowContext = createContext(null)
 
 // Path configurations based on flowchart
 export const WORKFLOW_PATHS = {
-  // Path 1: ขออนุมัติโครงการ
+  // Path 1: ขออนุมัติโครงการ (Full Bundle)
+  // Documents: 1.บันทึกโครงการ 2.ใช้รถส่วนตัว 3.ประชุม/อบรม 4.FOTO-04 5.ประมาณค่าใช้จ่าย 6.กำหนดการ
   project: {
     id: 'project',
     name: 'ขออนุมัติโครงการ',
-    description: 'Path 1: บันทึกข้อความขออนุมัติดำเนินโครงการ พร้อมรายละเอียดงบประมาณ',
+    description: 'Path 1: บันทึกข้อความขออนุมัติดำเนินโครงการ (Bundle เต็มรูปแบบ)',
     icon: 'fa-solid fa-file-contract',
     color: 'primary',
     steps: [
       { id: 'project-form', label: 'กรอกข้อมูลโครงการ', form: 'project' },
-      { id: 'budget-decision', label: 'ต้องการยืมเงิน?', type: 'decision' },
-      { id: 'loan-form', label: 'ขอยืมเงินทดรอง', form: 'loan', optional: true },
       { id: 'car-decision', label: 'ใช้รถส่วนตัว?', type: 'decision' },
       { id: 'car-form', label: 'ขอใช้รถส่วนตัว', form: 'car', optional: true },
+      { id: 'conference-decision', label: 'มีการประชุม/อบรม?', type: 'decision' },
+      { id: 'conference-form', label: 'แบบขอเข้าร่วมประชุม/อบรม', form: 'conference', optional: true },
+      { id: 'loan-decision', label: 'ต้องการยืมเงิน?', type: 'decision' },
+      { id: 'loan-form', label: 'สัญญายืมเงิน (FOTO-04)', form: 'loan', optional: true },
+      { id: 'attachments', label: 'แนบเอกสารเพิ่มเติม', type: 'attachments' },
       { id: 'bundle-preview', label: 'ตรวจสอบเอกสาร', type: 'preview' },
     ],
-    documents: ['PROJECT-REQ', 'LOAN-REQ', 'CAR-REQ'],
+    documents: ['PROJECT-REQ', 'CAR-REQ', 'CONF-REQ', 'LOAN-REQ', 'EXPENSE-FORM', 'SCHEDULE-FORM'],
   },
-  // Path 2: สัญญายืมเงิน FOTO-04
+  // Path 2: สัญญายืมเงิน FOTO-04 (อ้างอิงโครงการเดิม)
   loan: {
     id: 'loan',
     name: 'สัญญายืมเงิน (FOTO-04)',
-    description: 'Path 2: สัญญายืมเงินทดรองจ่ายสำหรับโครงการหรือกิจกรรม',
+    description: 'Path 2: สัญญายืมเงินทดรองจ่าย อ้างอิงรหัสโครงการเดิม',
     icon: 'fa-solid fa-money-bill-transfer',
     color: 'blue',
     steps: [
@@ -56,7 +69,7 @@ export const WORKFLOW_PATHS = {
     steps: [
       { id: 'car-form', label: 'กรอกข้อมูลรถยนต์', form: 'car' },
       { id: 'loan-decision', label: 'ต้องการยืมเงิน?', type: 'decision' },
-      { id: 'loan-form', label: 'ขอยืมเงินทดรอง', form: 'loan', optional: true },
+      { id: 'loan-form', label: 'สัญญายืมเงิน (FOTO-04)', form: 'loan', optional: true },
       { id: 'bundle-preview', label: 'ตรวจสอบเอกสาร', type: 'preview' },
     ],
     documents: ['CAR-REQ', 'LOAN-REQ'],
@@ -70,53 +83,48 @@ export const WORKFLOW_PATHS = {
     color: 'teal',
     steps: [
       { id: 'conference-form', label: 'กรอกข้อมูลการประชุม/เดินทาง', form: 'conference' },
-      { id: 'expense-decision', label: 'ต้องการยืมเงิน?', type: 'decision' },
-      { id: 'loan-form', label: 'ขอยืมเงินทดรอง', form: 'loan', optional: true },
       { id: 'car-decision', label: 'ใช้รถส่วนตัว?', type: 'decision' },
       { id: 'car-form', label: 'ขอใช้รถส่วนตัว', form: 'car', optional: true },
+      { id: 'loan-decision', label: 'ต้องการยืมเงิน?', type: 'decision' },
+      { id: 'loan-form', label: 'สัญญายืมเงิน (FOTO-04)', form: 'loan', optional: true },
       { id: 'bundle-preview', label: 'ตรวจสอบเอกสาร', type: 'preview' },
     ],
-    documents: ['CONF-REQ', 'LOAN-REQ', 'CAR-REQ'],
+    documents: ['CONF-REQ', 'CAR-REQ', 'LOAN-REQ'],
   },
 }
 
 // Decision points configuration
 export const DECISION_POINTS = {
-  'expense-decision': {
-    question: 'คุณต้องการยืมเงินทดรองหรือไม่?',
+  'car-decision': {
+    question: 'คุณจะใช้รถยนต์ส่วนตัวในการเดินทางหรือไม่?',
+    description: 'หากใช้รถส่วนตัว จะต้องกรอกแบบฟอร์มขอใช้รถยนต์ส่วนตัวเพิ่มเติม',
     options: [
-      { value: 'yes', label: 'ต้องการยืมเงินทดรอง', nextStep: 'loan-form', icon: 'fa-solid fa-money-bill-wave' },
-      { value: 'no', label: 'ไม่ต้องการยืมเงิน', skipTo: 'car-decision', icon: 'fa-solid fa-xmark' },
+      { value: 'yes', label: 'ใช้รถยนต์ส่วนตัว', nextStep: 'car-form', icon: 'fa-solid fa-car' },
+      { value: 'no', label: 'ไม่ใช้รถส่วนตัว (รถหน่วยงาน/สาธารณะ/เครื่องบิน)', skipToNext: true, icon: 'fa-solid fa-bus' },
     ],
   },
-  'budget-decision': {
-    question: 'โครงการนี้ต้องการยืมเงินทดรองหรือไม่?',
+  'conference-decision': {
+    question: 'โครงการนี้มีการเข้าร่วมประชุม/อบรม/สัมมนาหรือไม่?',
+    description: 'หากมี จะต้องกรอกแบบขออนุมัติเข้าร่วมประชุม/อบรม/สัมมนาในประเทศ',
     options: [
-      { value: 'yes', label: 'ต้องการยืมเงินทดรอง', nextStep: 'loan-form', icon: 'fa-solid fa-money-bill-wave' },
-      { value: 'no', label: 'ไม่ต้องการยืมเงิน', skipTo: 'car-decision', icon: 'fa-solid fa-xmark' },
+      { value: 'yes', label: 'มีการประชุม/อบรม/สัมมนา', nextStep: 'conference-form', icon: 'fa-solid fa-users-rectangle' },
+      { value: 'no', label: 'ไม่มี', skipToNext: true, icon: 'fa-solid fa-xmark' },
     ],
   },
   'loan-decision': {
     question: 'คุณต้องการยืมเงินทดรองหรือไม่?',
-    description: 'สำหรับค่าน้ำมันหรือค่าใช้จ่ายอื่นๆ ในการเดินทาง',
+    description: 'สำหรับค่าใช้จ่ายในการเดินทาง ค่าลงทะเบียน หรือค่าใช้จ่ายอื่นๆ',
     options: [
       { value: 'yes', label: 'ต้องการยืมเงินทดรอง (FOTO-04)', nextStep: 'loan-form', icon: 'fa-solid fa-money-bill-wave' },
-      { value: 'no', label: 'ไม่ต้องการยืมเงิน', skipTo: 'bundle-preview', icon: 'fa-solid fa-xmark' },
-    ],
-  },
-  'car-decision': {
-    question: 'คุณจะใช้รถยนต์ส่วนตัวในการเดินทางหรือไม่?',
-    options: [
-      { value: 'yes', label: 'ใช้รถยนต์ส่วนตัว', nextStep: 'car-form', icon: 'fa-solid fa-car' },
-      { value: 'no', label: 'ไม่ใช้รถส่วนตัว (รถหน่วยงาน/สาธารณะ/เครื่องบิน)', skipTo: 'bundle-preview', icon: 'fa-solid fa-bus' },
+      { value: 'no', label: 'ไม่ต้องการยืมเงิน', skipToNext: true, icon: 'fa-solid fa-xmark' },
     ],
   },
   'reference-check': {
     question: 'คุณมีเอกสารอ้างอิงหรือไม่?',
     description: 'การยืมเงินทดรองต้องมีเอกสารอ้างอิง เช่น ใบอนุมัติเดินทาง หรือ ใบอนุมัติโครงการ',
     options: [
-      { value: 'has-reference', label: 'มีเอกสารอ้างอิง', nextStep: 'loan-form', icon: 'fa-solid fa-file-check' },
-      { value: 'no-reference', label: 'ยังไม่มี - สร้างคำขอใหม่', redirectTo: '/requests/new', icon: 'fa-solid fa-file-circle-plus' },
+      { value: 'has-reference', label: 'มีเอกสารอ้างอิง (เลือกรหัสโครงการ)', nextStep: 'loan-form', icon: 'fa-solid fa-file-check' },
+      { value: 'no-reference', label: 'ยังไม่มี - สร้างคำขอโครงการใหม่', redirectTo: '/requests/workflow/project', icon: 'fa-solid fa-file-circle-plus' },
     ],
   },
 }
@@ -198,17 +206,49 @@ export function WorkflowProvider({ children }) {
       const selectedOption = decision.options.find(opt => opt.value === decisionAnswer)
       
       if (selectedOption) {
-        // Find the target step
-        const targetStepId = selectedOption.nextStep || selectedOption.skipTo
-        const targetIndex = currentPath.steps.findIndex(s => s.id === targetStepId)
-        
-        if (targetIndex !== -1) {
-          // Mark skipped steps
-          for (let i = currentStepIndex + 1; i < targetIndex; i++) {
-            setSkippedSteps(prev => [...prev, currentPath.steps[i].id])
+        // Handle skipToNext - skip to the next step that isn't the optional form
+        if (selectedOption.skipToNext) {
+          // Find the next non-optional step or the next decision/preview step
+          let nextIndex = currentStepIndex + 1
+          while (nextIndex < currentPath.steps.length) {
+            const nextStep = currentPath.steps[nextIndex]
+            // Skip optional form steps
+            if (nextStep.optional) {
+              setSkippedSteps(prev => [...prev, nextStep.id])
+              nextIndex++
+            } else {
+              break
+            }
           }
-          setCurrentStepIndex(targetIndex)
-          return
+          if (nextIndex < currentPath.steps.length) {
+            setCurrentStepIndex(nextIndex)
+            return
+          }
+        }
+        
+        // Handle nextStep - go to specific step
+        if (selectedOption.nextStep) {
+          const targetIndex = currentPath.steps.findIndex(s => s.id === selectedOption.nextStep)
+          if (targetIndex !== -1) {
+            // Mark steps in between as skipped
+            for (let i = currentStepIndex + 1; i < targetIndex; i++) {
+              setSkippedSteps(prev => [...prev, currentPath.steps[i].id])
+            }
+            setCurrentStepIndex(targetIndex)
+            return
+          }
+        }
+        
+        // Handle skipTo (legacy) - go to specific step, skipping in between
+        if (selectedOption.skipTo) {
+          const targetIndex = currentPath.steps.findIndex(s => s.id === selectedOption.skipTo)
+          if (targetIndex !== -1) {
+            for (let i = currentStepIndex + 1; i < targetIndex; i++) {
+              setSkippedSteps(prev => [...prev, currentPath.steps[i].id])
+            }
+            setCurrentStepIndex(targetIndex)
+            return
+          }
         }
       }
     }
@@ -246,20 +286,44 @@ export function WorkflowProvider({ children }) {
   }, [currentPath, currentStepIndex, skippedSteps])
   
   // Get all completed documents in bundle
+  // ลำดับเอกสารตามที่กำหนด:
+  // 1. บันทึกข้อความขออนุมัติโครงการ
+  // 2. บันทึกข้อความขออนุมัติใช้รถส่วนตัว
+  // 3. แบบขออนุมัติเข้าร่วมประชุม/อบรม/สัมมนาในประเทศ
+  // 4. สัญญายืมเงิน FOTO-04
+  // 5. แนบไฟล์แบบฟอร์มประมาณค่าใช้จ่าย
+  // 6. แนบไฟล์รายละเอียดกำหนดการ
   const getBundleDocuments = useCallback(() => {
     const docs = []
     
+    // 1. บันทึกข้อความขออนุมัติโครงการ
     if (bundleData.project) {
-      docs.push({ type: 'project', label: 'ขออนุมัติโครงการ', data: bundleData.project })
+      docs.push({ type: 'project', label: 'บันทึกข้อความขออนุมัติโครงการ', data: bundleData.project })
     }
-    if (bundleData.conference) {
-      docs.push({ type: 'conference', label: 'ขออนุมัติเข้าร่วมประชุม/เดินทาง', data: bundleData.conference })
-    }
+    
+    // 2. บันทึกข้อความขออนุมัติใช้รถส่วนตัว
     if (bundleData.car) {
-      docs.push({ type: 'car', label: 'ขอใช้รถยนต์ส่วนตัว', data: bundleData.car })
+      docs.push({ type: 'car', label: 'บันทึกข้อความขอใช้รถยนต์ส่วนตัว', data: bundleData.car })
     }
+    
+    // 3. แบบขออนุมัติเข้าร่วมประชุม/อบรม/สัมมนาในประเทศ
+    if (bundleData.conference) {
+      docs.push({ type: 'conference', label: 'แบบขออนุมัติเข้าร่วมประชุม/อบรม/สัมมนาในประเทศ', data: bundleData.conference })
+    }
+    
+    // 4. สัญญายืมเงิน FOTO-04
     if (bundleData.loan) {
-      docs.push({ type: 'loan', label: 'ขอยืมเงินทดรอง', data: bundleData.loan })
+      docs.push({ type: 'loan', label: 'สัญญายืมเงินทดรองจ่าย (FOTO-04)', data: bundleData.loan })
+    }
+    
+    // 5. แนบไฟล์แบบฟอร์มประมาณค่าใช้จ่าย (จาก attachments)
+    if (bundleData.attachments?.expenseForm) {
+      docs.push({ type: 'expense-attachment', label: 'แบบฟอร์มประมาณค่าใช้จ่าย', data: bundleData.attachments.expenseForm })
+    }
+    
+    // 6. แนบไฟล์รายละเอียดกำหนดการ (จาก attachments)
+    if (bundleData.attachments?.scheduleForm) {
+      docs.push({ type: 'schedule-attachment', label: 'รายละเอียดกำหนดการ', data: bundleData.attachments.scheduleForm })
     }
     
     return docs

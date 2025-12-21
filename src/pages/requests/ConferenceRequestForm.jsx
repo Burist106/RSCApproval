@@ -304,7 +304,7 @@ export default function ConferenceRequestForm({
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Left Column - Form Input */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-2 xl:order-1">
             
             {/* Section 1: Requester Info */}
             <Card className="p-6">
@@ -740,9 +740,9 @@ export default function ConferenceRequestForm({
           </div>
 
           {/* Right Column - Preview */}
-          <div className="h-[calc(100vh-120px)]">
-            <div className="sticky top-6 h-full flex flex-col">
-              <Card className="p-4 flex-1 flex flex-col overflow-hidden">
+          <div className="order-1 xl:order-2">
+            <div className="sticky top-4">
+              <Card className="p-4 max-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between mb-3 shrink-0">
                   <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <i className="fa-solid fa-eye text-primary-600"></i>

@@ -211,6 +211,19 @@ export default function RequestWorkflowPage() {
           />
         )}
         
+        {/* Attachments Step */}
+        {currentStep.type === 'attachments' && (
+          <AttachmentsStep
+            initialData={bundleData.attachments}
+            onComplete={(data) => {
+              saveFormData('attachments', data)
+              goToNextStep()
+            }}
+            onBack={handleBack}
+            colors={colors}
+          />
+        )}
+        
         {/* Bundle Preview */}
         {currentStep.type === 'preview' && (
           <BundlePreviewStep
@@ -305,6 +318,174 @@ function FormStep({ formType, initialData, onComplete, onBack, pathId, isEmbedde
 }
 
 /**
+ * AttachmentsStep Component
+ * Allows uploading additional attachments (expense form, schedule)
+ */
+function AttachmentsStep({ initialData, onComplete, onBack, colors }) {
+  const [attachments, setAttachments] = useState({
+    expenseForm: initialData?.expenseForm || null,
+    scheduleForm: initialData?.scheduleForm || null,
+  })
+  const [errors, setErrors] = useState({})
+  
+  const handleFileChange = (field) => (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: 'ไฟล์ไม่รองรับ กรุณาอัปโหลดไฟล์ PDF, Word หรือรูปภาพ'
+        }))
+        return
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: 'ไฟล์ใหญ่เกินไป (สูงสุด 10MB)'
+        }))
+        return
+      }
+      
+      setErrors(prev => ({ ...prev, [field]: null }))
+      setAttachments(prev => ({
+        ...prev,
+        [field]: {
+          file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        }
+      }))
+    }
+  }
+  
+  const handleRemoveFile = (field) => () => {
+    setAttachments(prev => ({ ...prev, [field]: null }))
+  }
+  
+  const handleSubmit = () => {
+    onComplete(attachments)
+  }
+  
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+  
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className={`w-16 h-16 rounded-2xl ${colors.bg} flex items-center justify-center mx-auto mb-4`}>
+          <i className={`fa-solid fa-paperclip text-2xl ${colors.icon}`}></i>
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 mb-2">แนบเอกสารเพิ่มเติม</h2>
+        <p className="text-slate-500">อัปโหลดไฟล์แบบฟอร์มประมาณค่าใช้จ่าย และรายละเอียดกำหนดการ (ถ้ามี)</p>
+      </div>
+      
+      <div className="space-y-6">
+        {/* Expense Form Upload */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <i className="fa-solid fa-calculator mr-2 text-orange-500"></i>
+            แบบฟอร์มประมาณค่าใช้จ่าย
+          </label>
+          {attachments.expenseForm ? (
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <i className="fa-solid fa-file-check text-green-600"></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-slate-800 truncate">{attachments.expenseForm.name}</p>
+                <p className="text-sm text-slate-500">{formatFileSize(attachments.expenseForm.size)}</p>
+              </div>
+              <button
+                onClick={handleRemoveFile('expenseForm')}
+                className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition">
+              <i className="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+              <span className="text-slate-600 font-medium">คลิกเพื่ออัปโหลดไฟล์</span>
+              <span className="text-xs text-slate-400 mt-1">PDF, Word, รูปภาพ (สูงสุด 10MB)</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileChange('expenseForm')}
+                className="hidden"
+              />
+            </label>
+          )}
+          {errors.expenseForm && (
+            <p className="text-sm text-red-500 mt-2">{errors.expenseForm}</p>
+          )}
+        </div>
+        
+        {/* Schedule Form Upload */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <i className="fa-solid fa-calendar-days mr-2 text-blue-500"></i>
+            รายละเอียดกำหนดการ
+          </label>
+          {attachments.scheduleForm ? (
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <i className="fa-solid fa-file-check text-green-600"></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-slate-800 truncate">{attachments.scheduleForm.name}</p>
+                <p className="text-sm text-slate-500">{formatFileSize(attachments.scheduleForm.size)}</p>
+              </div>
+              <button
+                onClick={handleRemoveFile('scheduleForm')}
+                className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition">
+              <i className="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+              <span className="text-slate-600 font-medium">คลิกเพื่ออัปโหลดไฟล์</span>
+              <span className="text-xs text-slate-400 mt-1">PDF, Word, รูปภาพ (สูงสุด 10MB)</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileChange('scheduleForm')}
+                className="hidden"
+              />
+            </label>
+          )}
+          {errors.scheduleForm && (
+            <p className="text-sm text-red-500 mt-2">{errors.scheduleForm}</p>
+          )}
+        </div>
+      </div>
+      
+      <Divider className="my-6" />
+      
+      <div className="flex justify-between">
+        <Button variant="ghost" onClick={onBack}>
+          <i className="fa-solid fa-arrow-left"></i>
+          ย้อนกลับ
+        </Button>
+        <Button onClick={handleSubmit}>
+          ดำเนินการต่อ
+          <i className="fa-solid fa-arrow-right"></i>
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+/**
  * BundlePreviewStep Component
  * Shows all documents in the bundle for final review
  */
@@ -319,6 +500,8 @@ function BundlePreviewStep({ documents, onSubmit, onBack, pathConfig, colors }) 
     car: 'fa-solid fa-car',
     loan: 'fa-solid fa-money-bill-transfer',
     travel: 'fa-solid fa-plane-departure',
+    'expense-attachment': 'fa-solid fa-calculator',
+    'schedule-attachment': 'fa-solid fa-calendar-days',
   }
   
   const handleSubmit = async () => {
@@ -659,6 +842,58 @@ function DocumentPreview({ document }) {
               <span>กำหนดคืน:</span>
               <span>{formatDate(data?.dueDate)}</span>
             </div>
+          </div>
+        </div>
+      )
+    
+    case 'expense-attachment':
+      return (
+        <div className="text-sm">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center mx-auto mb-4">
+              <i className="fa-solid fa-calculator text-2xl text-orange-600"></i>
+            </div>
+            <h3 className="font-bold text-lg">แบบฟอร์มประมาณค่าใช้จ่าย</h3>
+            <p className="text-slate-500 mt-2">ไฟล์แนบ</p>
+          </div>
+          <Divider className="my-4" />
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
+            <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+              <i className="fa-solid fa-file-pdf text-xl text-orange-600"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-slate-800 truncate">{data?.name || 'expense-form.pdf'}</p>
+              <p className="text-sm text-slate-500">
+                {data?.size ? `${(data.size / 1024).toFixed(1)} KB` : 'ไฟล์แนบ'}
+              </p>
+            </div>
+            <i className="fa-solid fa-check-circle text-green-500"></i>
+          </div>
+        </div>
+      )
+    
+    case 'schedule-attachment':
+      return (
+        <div className="text-sm">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
+              <i className="fa-solid fa-calendar-days text-2xl text-blue-600"></i>
+            </div>
+            <h3 className="font-bold text-lg">รายละเอียดกำหนดการ</h3>
+            <p className="text-slate-500 mt-2">ไฟล์แนบ</p>
+          </div>
+          <Divider className="my-4" />
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
+            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+              <i className="fa-solid fa-file-pdf text-xl text-blue-600"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-slate-800 truncate">{data?.name || 'schedule.pdf'}</p>
+              <p className="text-sm text-slate-500">
+                {data?.size ? `${(data.size / 1024).toFixed(1)} KB` : 'ไฟล์แนบ'}
+              </p>
+            </div>
+            <i className="fa-solid fa-check-circle text-green-500"></i>
           </div>
         </div>
       )

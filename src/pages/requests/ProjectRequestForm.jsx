@@ -305,7 +305,7 @@ export default function ProjectRequestForm({
       {/* Main Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Form Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 order-2 xl:order-1">
           
           {/* Section 1: Header Info */}
           <Card>
@@ -537,9 +537,9 @@ export default function ProjectRequestForm({
         </div>
 
         {/* Preview Section */}
-        <div className="h-[calc(100vh-120px)]">
-          <div className="sticky top-4 h-full flex flex-col">
-            <Card className="bg-slate-100 border-none p-4 flex-1 flex flex-col overflow-hidden">
+        <div className="order-1 xl:order-2">
+          <div className="sticky top-4">
+            <Card className="bg-slate-100 border-none p-4 max-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   <i className="fa-solid fa-eye mr-2"></i>

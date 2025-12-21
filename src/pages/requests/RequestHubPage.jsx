@@ -14,9 +14,10 @@ const requestTypes = [
     icon: 'fa-solid fa-file-contract',
     color: 'primary',
     title: 'ขออนุมัติโครงการ',
-    description: 'Path 1: บันทึกข้อความขออนุมัติดำเนินโครงการ พร้อมรายละเอียดงบประมาณ',
-    features: ['กรอกข้อมูลโครงการ', 'ระบุงบประมาณ', 'ขอยืมเงินเริ่มต้น', 'Bundle Preview'],
+    description: 'Path 1: บันทึกข้อความขออนุมัติดำเนินโครงการ (Bundle เต็มรูปแบบ)',
+    features: ['บันทึกโครงการ', 'ขอใช้รถส่วนตัว', 'ประชุม/อบรม', 'ยืมเงิน FOTO-04', 'แนบประมาณค่าใช้จ่าย', 'แนบกำหนดการ'],
     badge: 'Path 1',
+    isBundle: true,
   },
   {
     id: 'loan',
@@ -24,8 +25,8 @@ const requestTypes = [
     icon: 'fa-solid fa-money-bill-transfer',
     color: 'blue',
     title: 'สัญญายืมเงิน (FOTO-04)',
-    description: 'Path 2: สัญญายืมเงินทดรองจ่ายสำหรับโครงการหรือกิจกรรม',
-    features: ['ตรวจสอบเอกสารอ้างอิง', 'กรอกข้อมูลยืมเงิน', 'พิมพ์ FOTO-04'],
+    description: 'Path 2: สัญญายืมเงินทดรองจ่าย อ้างอิงรหัสโครงการเดิม',
+    features: ['เลือกโครงการอ้างอิง', 'กรอกข้อมูลยืมเงิน', 'พิมพ์ FOTO-04'],
     badge: 'Path 2',
   },
   {
@@ -35,7 +36,7 @@ const requestTypes = [
     color: 'purple',
     title: 'ขออนุมัติใช้รถส่วนตัว',
     description: 'Path 3: ขออนุมัติใช้รถยนต์ส่วนตัวเดินทางไปราชการ',
-    features: ['คำนวณระยะทาง', 'คำนวณค่าชดเชยน้ำมัน', 'แนบแผนที่เส้นทาง'],
+    features: ['กรอกข้อมูลรถยนต์', 'คำนวณค่าชดเชยน้ำมัน', 'เลือกยืมเงิน (ถ้าต้องการ)'],
     badge: 'Path 3',
   },
   {
@@ -44,8 +45,8 @@ const requestTypes = [
     icon: 'fa-solid fa-plane-departure',
     color: 'teal',
     title: 'ขออนุมัติประชุม/เดินทาง',
-    description: 'Path 4: ขออนุมัติเข้าร่วมประชุม/สัมมนา หรือเดินทางไปราชการ',
-    features: ['กรอกข้อมูลประชุม', 'ขอยืมเงินทดรอง', 'ขอใช้รถส่วนตัว', 'Bundle Preview'],
+    description: 'Path 4: ขออนุมัติเข้าร่วมประชุม/อบรม/สัมมนา หรือเดินทางไปราชการ',
+    features: ['ประชุม/อบรม', 'เลือกใช้รถส่วนตัว', 'เลือกยืมเงิน', 'Bundle Preview'],
     badge: 'Path 4',
   },
 ]
@@ -99,11 +100,19 @@ export default function RequestHubPage() {
               `}
             >
               {/* Path Badge */}
-              {type.badge && (
-                <span className="absolute top-3 right-3 text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
-                  {type.badge}
-                </span>
-              )}
+              <div className="absolute top-3 right-3 flex gap-2">
+                {type.isBundle && (
+                  <span className="text-xs font-bold bg-primary-100 text-primary-600 px-2 py-1 rounded-full">
+                    <i className="fa-solid fa-layer-group mr-1"></i>
+                    Bundle
+                  </span>
+                )}
+                {type.badge && (
+                  <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
+                    {type.badge}
+                  </span>
+                )}
+              </div>
               <div className="flex items-start gap-4">
                 <IconBox 
                   icon={type.icon} 
