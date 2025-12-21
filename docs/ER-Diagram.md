@@ -535,6 +535,135 @@ flowchart TB
 
 ---
 
+## Complete System Flow (Full Workflow)
+
+```mermaid
+flowchart TD
+    %% Define Styles
+    classDef user fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef admin fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef director fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef system fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef endNode fill:#ffebee,stroke:#c62828,stroke-width:2px;
+
+    %% Start Process
+    Start((จุดเริ่มต้น)) --> Login[เข้าสู่ระบบ]
+    Login --> RoleCheck{ตรวจสอบสิทธิ์}
+    
+    %% ==========================================
+    %% B-Level Section: Detailed 4 Paths
+    %% ==========================================
+    subgraph B_Level [User: นักวิจัย สร้างคำขอ]
+        direction TB
+        RoleCheck -- B-Level --> SelectPath[เลือกประเภทคำขอ 4 เส้นทาง]
+        
+        %% --- Path 1: โครงการ ---
+        SelectPath --> P1_Start(Path 1: ขออนุมัติโครงการ)
+        P1_Start --> P1_Form[กรอกข้อมูลโครงการ/เลือก TOR]
+        P1_Form --> P1_Car{มีการใช้\nรถส่วนตัว?}
+        P1_Car -- Yes --> P1_CarForm[กรอกฟอร์มขอใช้รถ]
+        P1_Car -- No --> P1_Loan
+        P1_CarForm --> P1_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P1_Loan -- Yes --> P1_FOTO[กรอก FOTO-04]
+        P1_Loan -- No --> P1_Bundle
+        P1_FOTO --> P1_Bundle(รอรวมเอกสาร)
+
+        %% --- Path 2: ยืมเงิน ---
+        SelectPath --> P2_Start(Path 2: สัญญายืมเงิน)
+        P2_Start --> P2_Form[กรอก FOTO-04/เลือก TOR]
+        P2_Form --> P2_Bundle(รอรวมเอกสาร)
+
+        %% --- Path 3: รถส่วนตัว ---
+        SelectPath --> P3_Start(Path 3: ขอใช้รถส่วนตัว)
+        P3_Start --> P3_Form[กรอกฟอร์มขอใช้รถ]
+        P3_Form --> P3_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P3_Loan -- Yes --> P3_FOTO[กรอก FOTO-04]
+        P3_Loan -- No --> P3_Bundle
+        P3_FOTO --> P3_Bundle(รอรวมเอกสาร)
+
+        %% --- Path 4: เดินทาง/ประชุม ---
+        SelectPath --> P4_Start(Path 4: ขออนุมัติเดินทาง)
+        P4_Start --> P4_Form[กรอกฟอร์มเดินทาง/ประชุม]
+        P4_Form --> P4_Car{มีการใช้\nรถส่วนตัว?}
+        P4_Car -- Yes --> P4_CarForm[กรอกฟอร์มขอใช้รถ]
+        P4_Car -- No --> P4_Loan
+        P4_CarForm --> P4_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P4_Loan -- Yes --> P4_FOTO[กรอก FOTO-04]
+        P4_Loan -- No --> P4_Bundle
+        P4_FOTO --> P4_Bundle(รอรวมเอกสาร)
+
+        %% --- Bundling & Submit ---
+        P1_Bundle & P2_Bundle & P3_Bundle & P4_Bundle --> BundleProcess[ระบบมัดรวมเอกสาร Bundle]
+        BundleProcess --> Submit[กดส่งคำขออนุมัติ]
+    end
+
+    %% ==========================================
+    %% Admin Section: Screening
+    %% ==========================================
+    subgraph Admin_Section [Admin: เจ้าหน้าที่ตรวจสอบ]
+        direction TB
+        Submit --> AdminInbox[กล่องงานรอตรวจสอบ ของ Admin]
+        AdminInbox --> AdminScreening{Admin ตรวจสอบ}
+        
+        AdminScreening -- ข้อมูลผิดพลาด --> SendBackUser[ส่งคืนแก้ไข]
+        SendBackUser -.->|แจ้งเตือน| SelectPath
+        
+        AdminScreening -- ข้อมูลถูกต้อง --> PassToDirector[ส่งต่อให้ ผอ.ศูนย์]
+    end
+
+    %% ==========================================
+    %% A-Level Section: Approval
+    %% ==========================================
+    subgraph A_Level [Director: ผอ.ศูนย์]
+        direction TB
+        PassToDirector --> DirectorInbox[กล่องงานรออนุมัติ ของ A-Level]
+        DirectorInbox --> DirectorReview[พิจารณาคำขอ]
+        
+        DirectorReview --> Decision{การตัดสินใจ}
+        
+        Decision -- ปฏิเสธ --> Reject[สถานะ: REJECTED]
+        Decision -- ส่งกลับแก้ไข --> SendBackAdmin[ส่งคืน Admin/User]
+        SendBackAdmin -.->|แจ้งเตือน| AdminInbox
+        
+        Decision -- อนุมัติ/เห็นชอบ --> LogicCheck{System Check:\nตรวจสอบยอดเงิน}
+    end
+
+    %% ==========================================
+    %% System Logic & Output
+    %% ==========================================
+    subgraph System_Logic [System Automation]
+        direction TB
+        LogicCheck -- ยอดเงิน <= 50,000 บาท --> StatusApprove[สถานะ: APPROVED\nอนุมัติจบที่ผอ.ศูนย์]
+        LogicCheck -- ยอดเงิน > 50,000 บาท --> StatusAgreed[สถานะ: AGREED\nเห็นควรอนุมัติ ส่งต่อผอ.สรบ]
+        
+        StatusApprove --> ExportPDF[Export เอกสารเป็น PDF]
+        StatusAgreed --> ExportPDF
+    end
+
+    %% End Process
+    Reject --> End((จบการทำงาน))
+    ExportPDF --> End
+
+    %% Apply Styles
+    class SelectPath,P1_Form,P1_CarForm,P1_FOTO,P2_Form,P3_Form,P3_FOTO,P4_Form,P4_CarForm,P4_FOTO,BundleProcess,Submit,SendBackUser user;
+    class AdminInbox,AdminScreening,PassToDirector,SendBackAdmin admin;
+    class DirectorInbox,DirectorReview,Decision,Reject director;
+    class RoleCheck,LogicCheck,StatusApprove,StatusAgreed,ExportPDF system;
+    class Start,End endNode;
+```
+
+### Flow Legend
+
+| Color | Role | Description |
+|-------|------|-------------|
+| 🔵 Light Blue | **B-Level (นักวิจัย)** | สร้างและกรอกแบบฟอร์มคำขอ |
+| 🟡 Yellow | **Admin (เจ้าหน้าที่)** | ตรวจสอบเอกสารเบื้องต้น (Screening) |
+| 🟢 Green | **A-Level (ผอ.ศูนย์)** | พิจารณาอนุมัติ/เห็นชอบ |
+| 🟣 Purple (Dashed) | **System** | ประมวลผลอัตโนมัติ |
+| 🔴 Red | **Start/End** | จุดเริ่มต้น/สิ้นสุด |
+
+---
+
 ## Notes
 
 1. **REQUEST_BUNDLE** เป็น Master Table ที่รวบรวมเอกสารทั้งหมดใน 1 คำขอ
