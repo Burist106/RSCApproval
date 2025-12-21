@@ -566,10 +566,10 @@ flowchart TD
         %% --- Path 1: โครงการ ---
         SelectPath --> P1_Start(Path 1: ขออนุมัติโครงการ)
         P1_Start --> P1_Form[กรอกข้อมูลโครงการ/เลือก TOR]
-        P1_Form --> P1_Car{มีการใช้\nรถส่วนตัว?}
+        P1_Form --> P1_Car{มีการใช้รถส่วนตัว?}
         P1_Car -- Yes --> P1_CarForm[กรอกฟอร์มขอใช้รถ]
         P1_Car -- No --> P1_Loan
-        P1_CarForm --> P1_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P1_CarForm --> P1_Loan{ต้องการทำสัญญายืมเงิน?}
         P1_Loan -- Yes --> P1_FOTO[กรอก FOTO-04]
         P1_Loan -- No --> P1_Bundle
         P1_FOTO --> P1_Bundle(รอรวมเอกสาร)
@@ -582,7 +582,7 @@ flowchart TD
         %% --- Path 3: รถส่วนตัว ---
         SelectPath --> P3_Start(Path 3: ขอใช้รถส่วนตัว)
         P3_Start --> P3_Form[กรอกฟอร์มขอใช้รถ]
-        P3_Form --> P3_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P3_Form --> P3_Loan{ต้องการทำสัญญายืมเงิน?}
         P3_Loan -- Yes --> P3_FOTO[กรอก FOTO-04]
         P3_Loan -- No --> P3_Bundle
         P3_FOTO --> P3_Bundle(รอรวมเอกสาร)
@@ -590,10 +590,10 @@ flowchart TD
         %% --- Path 4: เดินทาง/ประชุม ---
         SelectPath --> P4_Start(Path 4: ขออนุมัติเดินทาง)
         P4_Start --> P4_Form[กรอกฟอร์มเดินทาง/ประชุม]
-        P4_Form --> P4_Car{มีการใช้\nรถส่วนตัว?}
+        P4_Form --> P4_Car{มีการใช้รถส่วนตัว?}
         P4_Car -- Yes --> P4_CarForm[กรอกฟอร์มขอใช้รถ]
         P4_Car -- No --> P4_Loan
-        P4_CarForm --> P4_Loan{ต้องการทำ\nสัญญายืมเงิน?}
+        P4_CarForm --> P4_Loan{ต้องการทำสัญญายืมเงิน?}
         P4_Loan -- Yes --> P4_FOTO[กรอก FOTO-04]
         P4_Loan -- No --> P4_Bundle
         P4_FOTO --> P4_Bundle(รอรวมเอกสาร)
